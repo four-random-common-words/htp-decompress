@@ -1,0 +1,18 @@
+[package]
+name = "htp-decompress"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-only"
+repository = "https://github.com/four-random-common-words/htp-decompress"
+
+[features]
+default = ["gzip", "xz", "zstd"]
+gzip = ["dep:miniz_oxide", "dep:crc32fast"]
+xz = ["dep:lzma-rust2"]
+zstd = ["dep:ruzstd"]
+
+[dependencies]
+lzma-rust2 = { version = "=0.25.0", default-features = false, features = ["std", "xz"], optional = true }
+ruzstd = { version = "=0.9.1", default-features = false, features = ["std", "hash"], optional = true }
+miniz_oxide = { version = "0.9", default-features = false, features = ["with-alloc"], optional = true }
+crc32fast = { version = "1.5", default-features = false, optional = true }
