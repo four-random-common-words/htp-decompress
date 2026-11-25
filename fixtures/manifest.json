@@ -1,0 +1,757 @@
+{
+  "fixtures": [
+    {
+      "file": "gzip/hex.gz",
+      "format": "gzip",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 15700,
+          "referenceLength": 0
+        },
+        {
+          "at": 39252,
+          "referenceLength": 65536
+        },
+        {
+          "at": 78504,
+          "referenceLength": 131072
+        },
+        {
+          "at": 141308,
+          "referenceLength": 196608
+        }
+      ]
+    },
+    {
+      "file": "gzip/hex-headers.gz",
+      "format": "gzip",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 15703,
+          "referenceLength": 0
+        },
+        {
+          "at": 39258,
+          "referenceLength": 65536
+        },
+        {
+          "at": 78516,
+          "referenceLength": 131072
+        },
+        {
+          "at": 141329,
+          "referenceLength": 196608
+        }
+      ]
+    },
+    {
+      "file": "gzip/members.gz",
+      "format": "gzip",
+      "original": [
+        "numbered.txt",
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 15898,
+          "referenceLength": 8893
+        },
+        {
+          "at": 39745,
+          "referenceLength": 8893
+        },
+        {
+          "at": 79490,
+          "referenceLength": 139965
+        },
+        {
+          "at": 143082,
+          "referenceLength": 205501
+        }
+      ]
+    },
+    {
+      "file": "gzip/empty.gz",
+      "format": "gzip",
+      "original": [
+        "empty.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "gzip/aaaa.gz",
+      "format": "gzip",
+      "original": [
+        "repeat:a\n:8388608"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 7323,
+          "referenceLength": 1638400
+        },
+        {
+          "at": 18308,
+          "referenceLength": 4128768
+        },
+        {
+          "at": 36617,
+          "referenceLength": 8323072
+        },
+        {
+          "at": 65911,
+          "referenceLength": 15073280
+        }
+      ]
+    },
+    {
+      "file": "gzip/corrupt.gz",
+      "format": "gzip",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "corrupt",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "gzip/bad-crc.gz",
+      "format": "gzip",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "corrupt",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "gzip/reserved-flag.gz",
+      "format": "gzip",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "corrupt",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "gzip/trailing.gz",
+      "format": "gzip",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "trailing-data",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "gzip/zero.gz",
+      "format": "gzip",
+      "original": [
+        "empty.txt"
+      ],
+      "expect": "truncated",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "xz/hex.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 14303,
+          "referenceLength": 26637
+        },
+        {
+          "at": 35758,
+          "referenceLength": 67254
+        },
+        {
+          "at": 71516,
+          "referenceLength": 134967
+        },
+        {
+          "at": 128728,
+          "referenceLength": 243306
+        }
+      ]
+    },
+    {
+      "file": "xz/hex-none.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 14302,
+          "referenceLength": 26635
+        },
+        {
+          "at": 35756,
+          "referenceLength": 67250
+        },
+        {
+          "at": 71512,
+          "referenceLength": 134959
+        },
+        {
+          "at": 128721,
+          "referenceLength": 243292
+        }
+      ]
+    },
+    {
+      "file": "xz/hex-crc32.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 14302,
+          "referenceLength": 26635
+        },
+        {
+          "at": 35757,
+          "referenceLength": 67252
+        },
+        {
+          "at": 71514,
+          "referenceLength": 134963
+        },
+        {
+          "at": 128725,
+          "referenceLength": 243300
+        }
+      ]
+    },
+    {
+      "file": "xz/hex-sha256.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 14305,
+          "referenceLength": 26640
+        },
+        {
+          "at": 35764,
+          "referenceLength": 67266
+        },
+        {
+          "at": 71528,
+          "referenceLength": 134989
+        },
+        {
+          "at": 128750,
+          "referenceLength": 243347
+        }
+      ]
+    },
+    {
+      "file": "xz/hex-x86.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 14303,
+          "referenceLength": 26633
+        },
+        {
+          "at": 35758,
+          "referenceLength": 67250
+        },
+        {
+          "at": 71516,
+          "referenceLength": 134963
+        },
+        {
+          "at": 128728,
+          "referenceLength": 243302
+        }
+      ]
+    },
+    {
+      "file": "xz/hex-delta.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 18981,
+          "referenceLength": 26486
+        },
+        {
+          "at": 47453,
+          "referenceLength": 67082
+        },
+        {
+          "at": 94906,
+          "referenceLength": 134890
+        },
+        {
+          "at": 170830,
+          "referenceLength": 243294
+        }
+      ]
+    },
+    {
+      "file": "xz/hex-blocks.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 14656,
+          "referenceLength": 26920
+        },
+        {
+          "at": 36642,
+          "referenceLength": 67455
+        },
+        {
+          "at": 73284,
+          "referenceLength": 135051
+        },
+        {
+          "at": 131911,
+          "referenceLength": 243553
+        }
+      ]
+    },
+    {
+      "file": "xz/concat.xz",
+      "format": "xz",
+      "original": [
+        "numbered.txt",
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 14367,
+          "referenceLength": 34432
+        },
+        {
+          "at": 35919,
+          "referenceLength": 75233
+        },
+        {
+          "at": 71838,
+          "referenceLength": 143249
+        },
+        {
+          "at": 129308,
+          "referenceLength": 252078
+        }
+      ]
+    },
+    {
+      "file": "xz/empty.xz",
+      "format": "xz",
+      "original": [
+        "empty.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "xz/hex-dict65.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 14303,
+          "referenceLength": 26637
+        },
+        {
+          "at": 35758,
+          "referenceLength": 67254
+        },
+        {
+          "at": 71516,
+          "referenceLength": 134967
+        },
+        {
+          "at": 128728,
+          "referenceLength": 243306
+        }
+      ]
+    },
+    {
+      "file": "xz/hex-dict65.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "memory-limit",
+      "limit": 67108864,
+      "cuts": []
+    },
+    {
+      "file": "xz/aaaa-dict65.xz",
+      "format": "xz",
+      "original": [
+        "repeat:a\n:8388608"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 258,
+          "referenceLength": 1055693
+        },
+        {
+          "at": 646,
+          "referenceLength": 3741467
+        },
+        {
+          "at": 1292,
+          "referenceLength": 8190548
+        },
+        {
+          "at": 2325,
+          "referenceLength": 15252512
+        }
+      ]
+    },
+    {
+      "file": "xz/hex-chain.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "unsupported",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "xz/corrupt.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "corrupt",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "xz/bad-padding.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "corrupt",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "xz/trailing.xz",
+      "format": "xz",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "trailing-data",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "xz/zero.xz",
+      "format": "xz",
+      "original": [
+        "empty.txt"
+      ],
+      "expect": "truncated",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "zstd/hex-3.zst",
+      "format": "zstd",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 13932,
+          "referenceLength": 0
+        },
+        {
+          "at": 34831,
+          "referenceLength": 0
+        },
+        {
+          "at": 69663,
+          "referenceLength": 131072
+        },
+        {
+          "at": 125394,
+          "referenceLength": 131072
+        }
+      ]
+    },
+    {
+      "file": "zstd/hex-19.zst",
+      "format": "zstd",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 13865,
+          "referenceLength": 0
+        },
+        {
+          "at": 34662,
+          "referenceLength": 0
+        },
+        {
+          "at": 69325,
+          "referenceLength": 131072
+        },
+        {
+          "at": 124785,
+          "referenceLength": 131072
+        }
+      ]
+    },
+    {
+      "file": "zstd/hex-nocheck.zst",
+      "format": "zstd",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 13932,
+          "referenceLength": 0
+        },
+        {
+          "at": 34830,
+          "referenceLength": 0
+        },
+        {
+          "at": 69661,
+          "referenceLength": 131072
+        },
+        {
+          "at": 125390,
+          "referenceLength": 131072
+        }
+      ]
+    },
+    {
+      "file": "zstd/hex-pzstd.zst",
+      "format": "zstd",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 13933,
+          "referenceLength": 0
+        },
+        {
+          "at": 34834,
+          "referenceLength": 0
+        },
+        {
+          "at": 69669,
+          "referenceLength": 131072
+        },
+        {
+          "at": 125405,
+          "referenceLength": 131072
+        }
+      ]
+    },
+    {
+      "file": "zstd/frames.zst",
+      "format": "zstd",
+      "original": [
+        "numbered.txt",
+        "hex.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 14007,
+          "referenceLength": 8893
+        },
+        {
+          "at": 35017,
+          "referenceLength": 8893
+        },
+        {
+          "at": 70035,
+          "referenceLength": 139965
+        },
+        {
+          "at": 126063,
+          "referenceLength": 139965
+        }
+      ]
+    },
+    {
+      "file": "zstd/empty.zst",
+      "format": "zstd",
+      "original": [
+        "empty.txt"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "zstd/aaaa-long27.zst",
+      "format": "zstd",
+      "original": [
+        "repeat:a\n:8388608"
+      ],
+      "expect": "done",
+      "limit": null,
+      "cuts": [
+        {
+          "at": 154,
+          "referenceLength": 1572864
+        },
+        {
+          "at": 385,
+          "referenceLength": 4063232
+        },
+        {
+          "at": 771,
+          "referenceLength": 8257536
+        },
+        {
+          "at": 1388,
+          "referenceLength": 15073280
+        }
+      ]
+    },
+    {
+      "file": "zstd/aaaa-long28.zst",
+      "format": "zstd",
+      "original": [
+        "repeat:a\n:8388608"
+      ],
+      "expect": "memory-limit",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "zstd/dict.zst",
+      "format": "zstd",
+      "original": [
+        "empty.txt"
+      ],
+      "expect": "unsupported",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "zstd/legacy.zst",
+      "format": "zstd",
+      "original": [
+        "empty.txt"
+      ],
+      "expect": "unsupported",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "zstd/corrupt.zst",
+      "format": "zstd",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "corrupt",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "zstd/bad-checksum.zst",
+      "format": "zstd",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "corrupt",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "zstd/trailing.zst",
+      "format": "zstd",
+      "original": [
+        "hex.txt"
+      ],
+      "expect": "trailing-data",
+      "limit": null,
+      "cuts": []
+    },
+    {
+      "file": "zstd/zero.zst",
+      "format": "zstd",
+      "original": [
+        "empty.txt"
+      ],
+      "expect": "truncated",
+      "limit": null,
+      "cuts": []
+    }
+  ]
+}
