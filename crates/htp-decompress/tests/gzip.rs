@@ -110,13 +110,12 @@ fn reports_expected_errors() {
             fixture.file
         );
 
-        // Damaged deflate data can decode to wrong bytes before the checksum exposes it, so only other errors promise a clean prefix.
-        if !matches!(error, Error::Corrupt(_)) {
-            assert!(
-                fixture.original.starts_with(&decoded.output),
-                "{}",
-                fixture.file
-            );
-        }
+        // Damaged data can decode to wrong bytes before a checksum exposes it, so for Corrupt only the first 64 KiB must match.
+        let checked = match error {
+            Error::Corrupt(_) => &decoded.output[..decoded.output.len().min(65_536)],
+            _ => &decoded.output,
+        };
+
+        assert!(fixture.original.starts_with(checked), "{}", fixture.file);
     }
 }
