@@ -98,7 +98,7 @@ impl Decoder {
     pub fn new(format: Format, limits: Limits) -> Decoder {
         let inner = match format {
             #[cfg(feature = "gzip")]
-            Format::Gzip => gzip::new(limits),
+            Format::Gzip => Box::new(gzip::GzipDecoder::new()),
             #[cfg(feature = "xz")]
             Format::Xz => xz::new(limits),
             #[cfg(feature = "zstd")]
