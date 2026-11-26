@@ -102,21 +102,18 @@ fn reports_expected_errors() {
 
         let decoded = support::decode(Format::Gzip, &input, 65_536, 65_536, limits);
 
-        let error = decoded.result.expect_err(&fixture.file);
-
-        assert!(
-            support::same_kind(&error, expected),
-            "{}: {error:?}",
-            fixture.file
-        );
-
         // Only the flipped-byte fixture can decode to wrong bytes before the checksum exposes it, so only its first 64 KiB must match.
         let checked = if fixture.file == "gzip/corrupt.gz" {
             &decoded.output[..decoded.output.len().min(65_536)]
         } else {
             &decoded.output
         };
-
+        let error = decoded.result.expect_err(&fixture.file);
+        assert!(
+            support::same_kind(&error, expected),
+            "{}: {error:?}",
+            fixture.file
+        );
         assert!(fixture.original.starts_with(checked), "{}", fixture.file);
     }
 }

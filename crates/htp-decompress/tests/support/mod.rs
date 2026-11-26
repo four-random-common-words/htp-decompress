@@ -127,27 +127,22 @@ pub fn decode(
     limits: Limits,
 ) -> Decoded {
     let mut decoder = Decoder::new(format, limits);
-
     let mut output = Vec::new();
     let mut buffer = vec![0u8; output_chunk];
     let mut pending: Vec<u8> = Vec::new();
     let mut fed = 0;
     let mut stalled = 0;
     let mut max_produced_per_call = 0;
-
     let result = loop {
         let mut added = false;
-
         if fed < input.len() && pending.len() < input_chunk {
             let end = (fed + input_chunk).min(input.len());
-
             pending.extend_from_slice(&input[fed..end]);
             fed = end;
             added = true;
         }
 
         let end_of_input = fed == input.len();
-
         let progress = match decoder.process(&pending, &mut buffer, end_of_input) {
             Ok(progress) => progress,
             Err(error) => break Err(error),

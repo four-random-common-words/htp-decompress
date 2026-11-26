@@ -110,21 +110,18 @@ fn reports_expected_errors() {
 
         let decoded = support::decode(Format::Xz, &input, 65_536, 65_536, limits);
 
-        let error = decoded.result.expect_err(&fixture.file);
-
-        assert!(
-            support::same_kind(&error, expected),
-            "{}: {error:?}",
-            fixture.file
-        );
-
         // Damage inside compressed data can decode to wrong bytes until a check catches it, so only the flipped-byte fixture's first 64 KiB must match; the other error fixtures decode a clean prefix.
         let checked = if fixture.file == "xz/corrupt.xz" {
             &decoded.output[..decoded.output.len().min(65_536)]
         } else {
             &decoded.output
         };
-
+        let error = decoded.result.expect_err(&fixture.file);
+        assert!(
+            support::same_kind(&error, expected),
+            "{}: {error:?}",
+            fixture.file
+        );
         assert!(fixture.original.starts_with(checked), "{}", fixture.file);
     }
 }
@@ -164,7 +161,6 @@ fn reports_the_dictionary_needed() {
     let Err(Error::MemoryLimit { needed }) = decoded.result else {
         panic!("{:?}", decoded.result);
     };
-
     assert!(needed >= 68_157_440, "{needed}");
 }
 

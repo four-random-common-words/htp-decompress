@@ -244,7 +244,6 @@ impl FormatDecoder for ZstdDecoder {
 
         let mut consumed = 0;
         let mut produced = 0;
-
         let outcome = loop {
             let rest = &input[consumed..];
 

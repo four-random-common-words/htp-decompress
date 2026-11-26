@@ -198,14 +198,12 @@ impl FormatDecoder for GzipDecoder {
     fn step(&mut self, input: &[u8], output: &mut [u8], end_of_input: bool) -> Step {
         let mut consumed = 0;
         let mut produced = 0;
-
         let outcome = loop {
             let rest = &input[consumed..];
 
             match self.phase {
                 Phase::Header => {
                     let mut failure = None;
-
                     for &byte in rest {
                         if let Err(error) = self.header_byte(byte) {
                             failure = Some(error);
@@ -249,7 +247,6 @@ impl FormatDecoder for GzipDecoder {
                         MZFlush::None,
                     );
                     let written = &output[produced..produced + result.bytes_written];
-
                     self.crc.update(written);
                     self.size = self.size.wrapping_add(result.bytes_written as u32);
                     consumed += result.bytes_consumed;
@@ -276,7 +273,6 @@ impl FormatDecoder for GzipDecoder {
                 }
                 Phase::Trailer => {
                     let take = rest.len().min(8 - self.position);
-
                     self.trailer[self.position..self.position + take]
                         .copy_from_slice(&rest[..take]);
                     self.position += take;

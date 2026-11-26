@@ -102,21 +102,18 @@ fn reports_expected_errors() {
 
         let decoded = support::decode(Format::Zstd, &input, 65_536, 65_536, limits);
 
-        let error = decoded.result.expect_err(&fixture.file);
-
-        assert!(
-            support::same_kind(&error, expected),
-            "{}: {error:?}",
-            fixture.file
-        );
-
         // Damage inside compressed data can decode to wrong bytes until a checksum catches it, so only the flipped-byte fixture's first 64 KiB must match.
         let checked = if fixture.file == "zstd/corrupt.zst" {
             &decoded.output[..decoded.output.len().min(65_536)]
         } else {
             &decoded.output
         };
-
+        let error = decoded.result.expect_err(&fixture.file);
+        assert!(
+            support::same_kind(&error, expected),
+            "{}: {error:?}",
+            fixture.file
+        );
         assert!(fixture.original.starts_with(checked), "{}", fixture.file);
     }
 }

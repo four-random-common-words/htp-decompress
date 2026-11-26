@@ -30,29 +30,22 @@ fuzz_target!(|data: &[u8]| {
     };
 
     let mut decoder = Decoder::new(format, Limits { memory: MEMORY_LIMIT });
-
     let mut input_sizes = chunk_sizes(u64::from(*seed) + 1);
     let mut output_sizes = chunk_sizes(u64::from(*seed) + 257);
-
     let mut pending: Vec<u8> = Vec::new();
     let mut fed = 0;
     let mut stalled = 0;
-
     loop {
         let mut added = false;
-
         if fed < data.len() && pending.is_empty() {
             let end = (fed + input_sizes.next().unwrap()).min(data.len());
-
             pending.extend_from_slice(&data[fed..end]);
             fed = end;
             added = true;
         }
 
         let end_of_input = fed == data.len();
-
         let mut output = vec![0u8; output_sizes.next().unwrap()];
-
         let Ok(progress) = decoder.process(&pending, &mut output, end_of_input) else {
             return;
         };

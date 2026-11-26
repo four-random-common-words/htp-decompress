@@ -574,7 +574,6 @@ mod tests {
         let data: Vec<u8> = (0..1000u32).map(|i| (i % 251) as u8).collect();
         let mut buffer = DecodeBuffer::new(64);
         buffer.push(&data);
-
         let mut piece = [0u8; 7];
         while buffer.read_decoded(&mut piece) > 0 {}
 

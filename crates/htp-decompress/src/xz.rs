@@ -143,7 +143,6 @@ impl XzDecoder {
 impl FormatDecoder for XzDecoder {
     fn step(&mut self, input: &[u8], output: &mut [u8], end_of_input: bool) -> Step {
         let mut consumed = 0;
-
         loop {
             let rest = &input[consumed..];
 
