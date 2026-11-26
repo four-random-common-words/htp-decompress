@@ -15,14 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Check the tag against both versions
-        run: |
-          npm_version=$(node -p "require('./npm/package.json').version")
-          crate_version=$(sed -n 's/^version = "\(.*\)"$/\1/p' crates/htp-decompress/Cargo.toml | head -n 1)
-          echo "tag=$GITHUB_REF_NAME npm=$npm_version crate=$crate_version"
-          test "$GITHUB_REF_NAME" = "v$npm_version"
-          test "$GITHUB_REF_NAME" = "v$crate_version"
-
       - uses: actions-rust-lang/setup-rust-toolchain@v2
 
       # Must match mise.toml. Node 24.18.0 ships npm 11.16.0; trusted publishing needs 11.5.1 or newer.
@@ -30,6 +22,14 @@ jobs:
         with:
           node-version: 24.18.0
           registry-url: https://registry.npmjs.org
+
+      - name: Check the tag against all three versions
+        run: |
+          npm_version=$(node -p "require('./npm/package.json').version")
+          crate_versions=$(cargo metadata --no-deps --format-version 1 --locked | jq -r '.packages[].version' | sort -u)
+          echo "tag=$GITHUB_REF_NAME npm=$npm_version crates=$crate_versions"
+          test "$GITHUB_REF_NAME" = "v$npm_version"
+          test "$GITHUB_REF_NAME" = "v$crate_versions"
 
       - run: cargo fmt --check
       - run: cargo clippy --all-targets --locked -- -D warnings
@@ -45,12 +45,32 @@ jobs:
       - run: npm run typecheck
         working-directory: npm
 
-      # No token secret: npm authenticates through the trusted publisher configured on npmjs.com.
-      - run: npm publish --provenance --access public
-        working-directory: npm
-
+      # The tarball is built once; the published file and the release asset are the same artifact.
       - id: pack
         run: echo "tarball=$(npm pack --silent)" >> "$GITHUB_OUTPUT"
+        working-directory: npm
+
+      # A re-run of the tag skips the publish when the version is already on npm (versions are immutable),
+      # so a failure in a later step can be recovered by re-running. No token secret: npm authenticates
+      # through the trusted publisher configured on npmjs.com.
+      - name: Publish to npm
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if published=$(npm view "htp-decompress@$version" version 2>view-error.txt); then
+            :
+          elif grep -q E404 view-error.txt; then
+            published=""
+          else
+            cat view-error.txt
+            exit 1
+          fi
+          if [ "$published" = "$version" ]; then
+            echo "htp-decompress@$version is already on npm, skipping the publish"
+          else
+            npm publish "$TARBALL" --provenance --access public
+          fi
         working-directory: npm
 
       - uses: softprops/action-gh-release@v3
