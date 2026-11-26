@@ -10,6 +10,11 @@ ESM only, no runtime dependencies, TypeScript declarations included.
 
     npm install htp-decompress
 
+A page whose Content-Security-Policy sets a `script-src` (or a `default-src` without one) must allow
+`'wasm-unsafe-eval'` there, since the decoders are WebAssembly modules compiled in the page; without it, the first
+read or write fails with an `internal` error. Nothing else needs configuring: the modules are bundled in the
+JavaScript, so no extra file is fetched.
+
 ## Usage
 
 ```ts
@@ -35,6 +40,11 @@ const format = detectFormat(head); // 'gzip' | 'xz' | 'zstd' | null
 `detectFormat` checks the gzip magic and method byte (`1f 8b 08`), the xz magic (`fd 37 7a 58 5a 00`) and the zstd
 magic (`28 b5 2f fd`, or a skippable frame `5? 2a 4d 18` first). It returns `null` for anything else, and when it gets
 too few bytes.
+
+To stop decoding promptly, cancel the readable side: `reader.cancel()`, or leaving a `for await` loop early, stops the
+decoder at its next step and errors the writable side, so an upstream pipe stops too. An abort through a `pipeThrough`
+signal first waits for the chunk being written, as with the built-in `DecompressionStream`, and the decoder takes a
+chunk's bytes only as the reader reads.
 
 ## API
 
@@ -90,8 +100,6 @@ end.
 - gzip files with several members decode completely. Chrome's `DecompressionStream` stops after the first member.
 - Decoding is pull-driven: nothing is decoded ahead of the reader, so a reader that stops stops the work. Long decodes
   yield to the event loop about every 8 ms.
-- An abort through a `pipeThrough` signal takes effect after the chunk being written has been decoded and read, because
-  a write settles only when its bytes are consumed.
 - Also supports xz and zstd, which `DecompressionStream` does not.
 
 ## Limits
