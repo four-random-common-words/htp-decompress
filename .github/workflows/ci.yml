@@ -40,9 +40,13 @@ jobs:
       - run: cargo test --locked
 
       # Builds ruzstd's zstd-sys dev-dependency with the runner's C compiler. No clippy or --all-targets
-      # here: the vendored crate has upstream warnings and a bench whose corpus is not published.
+      # here: the vendored crate has upstream warnings and a bench whose corpus is not published. The
+      # toolchain action denies warnings for the whole job (CARGO_BUILD_WARNINGS), and the vendored
+      # manifest has upstream's "package.homepage is redundant" warning, so only this step allows them.
       - name: Test vendored ruzstd
         run: cargo test --manifest-path vendor/ruzstd/Cargo.toml --locked
+        env:
+          CARGO_BUILD_WARNINGS: allow
 
       - run: npm ci
         working-directory: npm
