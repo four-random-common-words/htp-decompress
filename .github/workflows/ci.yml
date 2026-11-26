@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 # A newer push to the same ref supersedes the running checks.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

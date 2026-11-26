@@ -33,11 +33,16 @@ Push a tag after bumping the versions:
     git tag v0.1.1
     git push origin v0.1.1
 
-`release.yml` runs the checks, packs the tarball, publishes that tarball with provenance through trusted
-publishing (no npm token is stored), and creates a GitHub release with it attached. If a step after the
-publish fails, re-run the workflow for the tag: it skips the publish when the version is already on npm and
-finishes the release. Trusted publishing needs npm
-11.5.1 or newer; the pinned Node 24.18.0 ships npm 11.16.0.
+`release.yml` runs two jobs. `build`, with read-only permissions, runs the checks, packs the tarball and
+uploads it as a workflow artifact. `publish`, the only job that can request an OIDC token and write
+releases, downloads that tarball, publishes it with provenance through trusted publishing (no npm token is
+stored), and creates a GitHub release with it attached.
+
+If `publish` fails after the publish, open the run and use "Re-run failed jobs": the job takes the same
+tarball from `build` again, skips the publish because the version is already on npm, and finishes the
+release. "Re-run all jobs" would build a new tarball, which may not match the published one byte for byte.
+
+Trusted publishing needs npm 11.5.1 or newer; the pinned Node 24.18.0 ships npm 11.16.0.
 
 ## Moving the repository to the hashtopolis organization
 
