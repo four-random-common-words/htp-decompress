@@ -1,6 +1,6 @@
 {
   "name": "htp-decompress",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "gzip, xz and zstd decompression streams for the browser and Node, compiled from Rust to WebAssembly",
   "license": "GPL-3.0-only",
   "repository": {
