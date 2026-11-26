@@ -120,3 +120,20 @@ fn reports_expected_errors() {
         assert!(fixture.original.starts_with(checked), "{}", fixture.file);
     }
 }
+
+#[test]
+fn hands_out_everything_before_a_checksum_error() {
+    let fixture = support::fixtures(Format::Gzip)
+        .into_iter()
+        .find(|fixture| fixture.file == "gzip/bad-crc.gz")
+        .expect("gzip/bad-crc.gz is in the manifest");
+    let input = support::read(&fixture.file);
+
+    let decoded = support::decode(Format::Gzip, &input, 65_536, 65_536, Limits::default());
+
+    assert!(decoded.output == fixture.original);
+    assert_eq!(
+        decoded.result,
+        Err(Error::Corrupt("gzip checksum mismatch"))
+    );
+}

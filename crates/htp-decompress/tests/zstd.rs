@@ -122,6 +122,23 @@ fn reports_expected_errors() {
 }
 
 #[test]
+fn hands_out_everything_before_a_checksum_error() {
+    let fixture = support::fixtures(Format::Zstd)
+        .into_iter()
+        .find(|fixture| fixture.file == "zstd/bad-checksum.zst")
+        .expect("zstd/bad-checksum.zst is in the manifest");
+    let input = support::read(&fixture.file);
+
+    let decoded = support::decode(Format::Zstd, &input, 65_536, 65_536, Limits::default());
+
+    assert!(decoded.output == fixture.original);
+    assert_eq!(
+        decoded.result,
+        Err(Error::Corrupt("zstd checksum mismatch"))
+    );
+}
+
+#[test]
 fn tells_foreign_bytes_from_a_cut_off_magic() {
     let frame = support::read("zstd/hex-3.zst");
 
