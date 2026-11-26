@@ -200,8 +200,13 @@ Measured: miniz_oxide inflate alone builds to 31 KB raw, 13 KB gzipped.
   unsupported filter chains to `Unsupported`, everything else to `Corrupt`. After a failing call,
   `total_out()` tells how much that call produced.
 - Known limit: `XzStream` accepts at most one BCJ or delta filter in front of LZMA2 per block;
-  longer chains are `Unsupported`. On a cut-off prefix it returns a few KiB less than `xz -dc`
-  (measured: 7.6 KB less on a 1 MiB prefix).
+  longer chains are `Unsupported`. It decodes a pass of up to 64 KiB before it hands any of it out,
+  and loses the pass that runs into a cut or damage, so the output falls short of `xz -dc` by up to
+  one 64 KiB decode pass, at a cut in highly repetitive data and before damage (measured: 63,609
+  bytes at a cut of `aaaa-dict65.xz`, at most 38 bytes at cuts of `hex.xz`). Each `XzStream` call
+  gets at most 4 KiB of input, which keeps the pass lost before damage to what 4 KiB decodes to
+  (measured on `hex.xz` with flipped bytes: at most 7.7 KB, against 65 KB with 64 KiB of input per
+  call) at no measurable cost in speed.
 
 #### zstd (ruzstd 0.9, `default-features = false, features = ["std", "hash"]`)
 
@@ -356,7 +361,7 @@ Rust (`cargo test`):
   with and without checksum, pzstd skippable frames, several frames, a dictionary frame, empty).
 - For each: the whole file decodes to the original, ending in `Done`; cuts at about 10, 25, 50
   and 90 % give a prefix of the original and then `Truncated`, at least as long as what
-  `gzip -dc`/`zstd -dc` give from the same cut (xz: within a few KiB of `xz -dc`); a flipped byte
+  `gzip -dc`/`zstd -dc` give from the same cut (xz: within 64 KiB of `xz -dc`); a flipped byte
   gives a prefix of the original and then `Corrupt`; random input and output chunk sizes give the
   same result.
 - Bounded work: with 16 KiB input slices of a file of `a\n` repeated millions of times, no call

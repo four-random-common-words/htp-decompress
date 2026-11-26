@@ -84,7 +84,8 @@ end.
 ## Differences from `DecompressionStream`
 
 - No lost output: when the input is cut off or damaged, the reader receives every byte decoded before that point, and
-  only then the error. `DecompressionStream` drops what it had queued.
+  only then the error. `DecompressionStream` drops what it had queued. For xz this holds up to one decode pass, see
+  [Limits](#limits).
 - Errors have a `code`, so a caller can tell a cut-off file from a damaged one or one over the memory limit.
 - gzip files with several members decode completely. Chrome's `DecompressionStream` stops after the first member.
 - Decoding is pull-driven: nothing is decoded ahead of the reader, so a reader that stops stops the work. Long decodes
@@ -97,6 +98,9 @@ end.
 
 - Not supported: zstd dictionaries and legacy (pre-1.0) zstd frames (`unsupported`).
 - xz accepts at most one BCJ or delta filter in front of LZMA2 per block.
+- xz output can fall short of what `xz -dc` gives by up to 64 KiB at a cut-off in highly repetitive data, and before
+  damage: the xz decoder underneath decodes in passes of up to 64 KiB and loses the pass that runs into the cut or the
+  damage.
 - Each format's WebAssembly module is bundled as base64 and loaded on first use, so bundlers split them into lazy chunks
   without extra configuration.
 

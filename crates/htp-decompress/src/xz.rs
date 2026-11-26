@@ -6,6 +6,10 @@ use crate::{Error, FormatDecoder, Limits, Outcome, Step};
 
 const MAGIC: [u8; 6] = [0xFD, b'7', b'z', b'X', b'Z', 0x00];
 
+/// The most input one call of lzma-rust2's decoder gets. lzma-rust2 decodes a pass of up to 64 KiB before it hands any
+/// of it out, and a pass that hits damage is lost, so smaller passes lose less output before damage.
+const PASS_INPUT: usize = 4096;
+
 /// Where the decoder is between and inside streams.
 enum Stage {
     /// Zero padding after a stream, whose length so far is in `padding`.
@@ -59,16 +63,37 @@ impl XzDecoder {
         }
     }
 
-    /// Runs `input` through the current stream. `Finish` is only used once `Run` has nothing left to do, because it fails before the decoder hands out what it already decoded.
+    /// Runs `input` through the current stream, in calls of at most `PASS_INPUT` bytes, until the input is used up, the output is full or the stream ends. `Finish` is only used once `Run` has nothing left to do, which in practice means no input is left, because it fails before the decoder hands out what it already decoded.
     fn run(&mut self, input: &[u8], output: &mut [u8], end_of_input: bool) -> (Step, bool) {
-        let (step, ended) = self.process(input, output, Action::Run);
-        let idle = step.consumed == 0 && step.produced == 0 && !ended;
+        let mut consumed = 0;
+        let mut produced = 0;
+        loop {
+            let slice = &input[consumed..input.len().min(consumed + PASS_INPUT)];
+            let (step, ended) = self.process(slice, &mut output[produced..], Action::Run);
+            consumed += step.consumed;
+            produced += step.produced;
 
-        if end_of_input && idle && matches!(step.outcome, Outcome::Continue) {
-            return self.process(input, output, Action::Finish);
+            let idle = consumed == 0 && produced == 0 && !ended;
+            let continues = matches!(step.outcome, Outcome::Continue);
+
+            if end_of_input && idle && continues {
+                return self.process(input, output, Action::Finish);
+            }
+
+            let more =
+                step.consumed == slice.len() && consumed < input.len() && produced < output.len();
+
+            if ended || !continues || !more {
+                return (
+                    Step {
+                        consumed,
+                        produced,
+                        outcome: step.outcome,
+                    },
+                    ended,
+                );
+            }
         }
-
-        (step, ended)
     }
 
     fn process(&mut self, input: &[u8], output: &mut [u8], action: Action) -> (Step, bool) {

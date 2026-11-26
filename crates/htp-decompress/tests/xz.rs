@@ -81,9 +81,11 @@ fn cut_prefixes_keep_their_output() {
                 Limits::default(),
             );
 
+            // lzma-rust2 decodes a pass of up to 64 KiB before it hands any of it out, and the pass that runs into the cut
+            // fails and is lost, so in highly repetitive data the output falls short of `xz -dc` by up to 64 KiB.
             assert!(fixture.original.starts_with(&decoded.output));
             assert!(
-                decoded.output.len() + 16_384 >= cut.reference_len,
+                decoded.output.len() + 65_536 >= cut.reference_len,
                 "{} {} {}",
                 fixture.file,
                 decoded.output.len(),
@@ -164,4 +166,23 @@ fn reports_the_dictionary_needed() {
     };
 
     assert!(needed >= 68_157_440, "{needed}");
+}
+
+#[test]
+fn loses_a_short_pass_before_damage() {
+    let input = support::read("xz/corrupt.xz");
+
+    let whole = support::decode(Format::Xz, &input, input.len(), 65_536, Limits::default());
+    let bytewise = support::decode(Format::Xz, &input, 1, 65_536, Limits::default());
+
+    // lzma-rust2 loses the pass that runs into damage. Each of its calls gets at most 4 KiB of input, so that pass is
+    // short however the input arrives, where 64 KiB of input made it 19 KB shorter than a byte at a time.
+    assert_eq!(whole.result, Err(Error::Corrupt("invalid xz data")));
+    assert_eq!(bytewise.result, Err(Error::Corrupt("invalid xz data")));
+    assert!(
+        whole.output.len().abs_diff(bytewise.output.len()) < 8_192,
+        "{} {}",
+        whole.output.len(),
+        bytewise.output.len()
+    );
 }
