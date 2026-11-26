@@ -4,7 +4,7 @@ import { HtpDecompressionError } from '../src/errors.js';
 import { type DecompressionFormat, FORMATS } from '../src/format.js';
 import { loadModule } from '../src/modules.js';
 import { DEFAULT_MEMORY_LIMIT, HtpDecompressionStream } from '../src/stream.js';
-import { timeSlice } from '../src/time-slice.js';
+import { timeSlice, yieldIfDue } from '../src/time-slice.js';
 import { WasmDecoder } from '../src/wasm-decoder.js';
 import { decodeUntilError, fixtures, readFixture } from './fixtures.js';
 
@@ -246,6 +246,30 @@ it('yields to the event loop', async () => {
   } finally {
     timeSlice.budgetMs = budgetMs;
   }
+});
+
+it('yields with scheduler.yield, else a MessageChannel, else setTimeout', async () => {
+  const budgetMs = timeSlice.budgetMs;
+  const schedulerYield = vi.fn(() => Promise.resolve());
+  const postMessage = vi.spyOn(MessagePort.prototype, 'postMessage');
+  const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+  timeSlice.budgetMs = 0;
+
+  try {
+    vi.stubGlobal('scheduler', { yield: schedulerYield });
+    await yieldIfDue();
+    vi.unstubAllGlobals();
+    await yieldIfDue();
+    vi.stubGlobal('MessageChannel', undefined);
+    await yieldIfDue();
+  } finally {
+    vi.unstubAllGlobals();
+    timeSlice.budgetMs = budgetMs;
+  }
+
+  expect(schedulerYield).toHaveBeenCalledOnce();
+  expect(postMessage).toHaveBeenCalledOnce();
+  expect(setTimeoutSpy).toHaveBeenCalledOnce();
 });
 
 it('ignores empty chunks', async () => {
