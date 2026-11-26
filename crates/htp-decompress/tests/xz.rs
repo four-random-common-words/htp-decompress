@@ -165,6 +165,36 @@ fn reports_the_dictionary_needed() {
 }
 
 #[test]
+fn compares_the_limit_with_the_declared_dictionary() {
+    let input = support::read("xz/hex-dict65.xz");
+
+    let fits = support::decode(
+        Format::Xz,
+        &input,
+        65_536,
+        65_536,
+        Limits {
+            memory: 100_663_296,
+        },
+    );
+    let short = support::decode(
+        Format::Xz,
+        &input,
+        65_536,
+        65_536,
+        Limits { memory: 99_614_720 },
+    );
+
+    // `xz --lzma2=dict=65MiB` declares the next dictionary size LZMA2 can encode, 96 MiB.
+    assert_eq!(fits.result, Ok(()));
+    assert!(
+        matches!(short.result, Err(Error::MemoryLimit { .. })),
+        "{:?}",
+        short.result
+    );
+}
+
+#[test]
 fn loses_a_short_pass_before_damage() {
     let input = support::read("xz/corrupt.xz");
 

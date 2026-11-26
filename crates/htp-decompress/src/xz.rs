@@ -10,6 +10,10 @@ const MAGIC: [u8; 6] = [0xFD, b'7', b'z', b'X', b'Z', 0x00];
 /// of it out, and a pass that hits damage is lost, so smaller passes lose less output before damage.
 const PASS_INPUT: usize = 4096;
 
+/// Added to the limit lzma-rust2 gets. lzma-rust2 counts its own working memory (40 KiB) on top of the dictionary, so
+/// without this a dictionary exactly at the limit would fail; with it, the limit compares against the declared dictionary.
+const LIMIT_HEADROOM_KIB: u64 = 64;
+
 /// Where the decoder is between and inside streams.
 enum Stage {
     /// Zero padding after a stream, whose length so far is in `padding`.
@@ -32,7 +36,9 @@ pub(crate) struct XzDecoder {
 
 impl XzDecoder {
     pub(crate) fn new(limits: Limits) -> XzDecoder {
-        let limit_kib = limits.memory.div_ceil(1024).min(u64::from(u32::MAX - 1)) as u32;
+        // u32::MAX means no limit to lzma-rust2.
+        let limit_kib =
+            (limits.memory.div_ceil(1024) + LIMIT_HEADROOM_KIB).min(u64::from(u32::MAX - 1)) as u32;
 
         XzDecoder {
             stream: XzStream::new_mem_limit(false, limit_kib),
