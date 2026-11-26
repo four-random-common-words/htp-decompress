@@ -63,6 +63,24 @@ export function decodeUntilError(decoder: WasmDecoder, input: Uint8Array): { out
   return { output: concat(chunks), error: undefined };
 }
 
+/** Drives `decoder` over `input` with more input to follow, until a call makes no progress, and returns the output. */
+export function decodeAvailable(decoder: WasmDecoder, input: Uint8Array): Uint8Array {
+  const chunks: Uint8Array[] = [];
+  let offset = 0;
+  for (;;) {
+    const { consumed, produced } = decoder.process(input.subarray(offset), false);
+    offset += consumed;
+
+    if (produced > 0) {
+      chunks.push(decoder.takeOutput());
+    }
+
+    if (consumed === 0 && produced === 0) {
+      return concat(chunks);
+    }
+  }
+}
+
 /**
  * Like `decodeAll`, one `process` call per step, so that decoders can be interleaved.
  *

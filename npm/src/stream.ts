@@ -44,6 +44,8 @@ export class HtpDecompressionStream {
   #closing: Pending | undefined;
   /** Lets a pull that waits for a write or close go on. */
   #waiting: (() => void) | undefined;
+  /** Whether the last decoder call made no progress: only then can the decoder hold no output that it could hand out. */
+  #drained = true;
   #ended = false;
 
   constructor(format: DecompressionFormat, options?: HtpDecompressionOptions) {
@@ -87,8 +89,9 @@ export class HtpDecompressionStream {
 
     try {
       for (;;) {
-        // The decoder is undefined once the stream has ended, by a cancel or abort while this pull waited, say.
-        while (this.#decoder !== undefined && this.#input === undefined && this.#closing === undefined) {
+        // Without input, the decoder is called with none until it has nothing left to hand out; only then does the pull
+        // wait. The decoder is undefined once the stream has ended, by a cancel or abort while this pull waited, say.
+        while (this.#decoder !== undefined && this.#input === undefined && this.#closing === undefined && this.#drained) {
           await new Promise<void>((resolve) => {
             this.#waiting = resolve;
           });
@@ -117,6 +120,8 @@ export class HtpDecompressionStream {
   #step(decoder: WasmDecoder): boolean {
     const input = this.#input;
     const { consumed, produced, done } = decoder.process(input?.bytes ?? new Uint8Array(), this.#closing !== undefined);
+
+    this.#drained = consumed === 0 && produced === 0;
 
     if (input !== undefined) {
       input.bytes = input.bytes.subarray(consumed);

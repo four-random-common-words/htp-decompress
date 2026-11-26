@@ -6,7 +6,7 @@ import { loadModule } from '../src/modules.js';
 import { DEFAULT_MEMORY_LIMIT, HtpDecompressionStream } from '../src/stream.js';
 import { timeSlice, yieldIfDue } from '../src/time-slice.js';
 import { WasmDecoder } from '../src/wasm-decoder.js';
-import { decodeUntilError, fixtures, readFixture } from './fixtures.js';
+import { decodeAvailable, decodeUntilError, fixtures, readFixture } from './fixtures.js';
 
 /** What a reader got before the end or an error, and the error. */
 interface Read {
@@ -148,6 +148,23 @@ it('reads an exact prefix and stops', async () => {
   await reader.cancel();
 
   expect(sameBytes(bytes, new TextEncoder().encode('a\n'.repeat(32_768)))).toBe(true);
+});
+
+it('hands out what the decoder holds before more input comes', async () => {
+  const prefix = fixtureBytes('zstd/aaaa-long27.zst').subarray(0, 282);
+  const reference = decodeAvailable(await WasmDecoder.create('zstd', DEFAULT_MEMORY_LIMIT), prefix);
+  const stream = new HtpDecompressionStream('zstd');
+  const writer = stream.writable.getWriter();
+  const reader = stream.readable.getReader();
+
+  // The writable side stays open, so only the decoder's held output can complete these reads.
+  const write = handled(writer.write(prefix));
+  const bytes = await readBeforeStall(reader, reference.length);
+  await reader.cancel();
+
+  expect(reference.length).toBe(3_014_656);
+  expect(sameBytes(bytes, reference)).toBe(true);
+  await expect(write).resolves.toBeUndefined();
 });
 
 it('passes a readable cancel upstream', async () => {
@@ -482,6 +499,28 @@ async function readAtLeast(reader: ReadableStreamDefaultReader<Uint8Array>, leng
     const chunk = await reader.read();
 
     if (chunk.done) {
+      break;
+    }
+
+    chunks.push(chunk.value);
+    read += chunk.value.length;
+  }
+
+  return Buffer.concat(chunks);
+}
+
+/** Reads until at least `length` bytes have come, the end, or a read that has not settled after a second. */
+async function readBeforeStall(reader: ReadableStreamDefaultReader<Uint8Array>, length: number): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  let read = 0;
+  while (read < length) {
+    // An AbortSignal timer does not keep Node running, so it needs no clearing.
+    const stalled = new Promise<undefined>((resolve) => {
+      AbortSignal.timeout(1_000).addEventListener('abort', () => resolve(undefined));
+    });
+    const chunk = await Promise.race([reader.read(), stalled]);
+
+    if (chunk === undefined || chunk.done) {
       break;
     }
 
