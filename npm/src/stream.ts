@@ -80,8 +80,8 @@ export class HtpDecompressionStream {
         // Signalled at once, also while a write is in flight; the sink's abort is called only once that write settles.
         controller.signal.addEventListener('abort', () => this.#abort(controller.signal.reason));
       },
-      write: (chunk) => this.#write(chunk),
-      close: () => this.#close(),
+      write: (chunk) => handedOver(this.#write(chunk)),
+      close: () => handedOver(this.#close()),
       abort: (reason) => this.#abort(reason)
     });
   }
@@ -260,6 +260,20 @@ export class HtpDecompressionStream {
     this.#waiting?.();
     this.#waiting = undefined;
   }
+}
+
+/**
+ * Marks a promise the sink hands to the streams machinery as handled; the machinery still gets its rejection.
+ *
+ * Under zone.js, as in an Angular app, the global Promise is zone.js's own, and zone.js reports a rejection that has no
+ * handler by the end of the microtask drain it happens in. The machinery attaches its handler to a promise that is not
+ * native only in a later native microtask, so a rejection in between, as a decoder error during a pull can cause, would
+ * be reported as unhandled.
+ */
+function handedOver(promise: Promise<void>): Promise<void> {
+  promise.catch(() => {});
+
+  return promise;
 }
 
 /** A copy of the bytes of an `ArrayBuffer` or `ArrayBufferView`; a `TypeError` for anything else. */
