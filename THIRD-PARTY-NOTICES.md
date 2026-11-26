@@ -27,7 +27,10 @@ The list is what this command gives for each format; update it when a dependency
 | twox-hash | 2.1.5 | zstd | MIT | Copyright (c) 2015 Jake Goulding |
 
 The modules also contain parts of the Rust standard library (`core`, `alloc`, `std` and the crates they build on for
-wasm32, such as the `dlmalloc` allocator), licensed MIT OR Apache-2.0 by the Rust Project Developers.
+wasm32, such as the `dlmalloc` allocator), licensed MIT OR Apache-2.0 by the Rust Project Developers. Its
+`compiler_builtins` crate, which supplies low-level routines, is licensed
+MIT AND Apache-2.0 WITH LLVM-exception AND (MIT OR Apache-2.0); the LLVM exception lets compiled object code carry those
+parts without the notice conditions of Apache-2.0 sections 4(a), 4(b) and 4(d).
 
 ## MIT License
 

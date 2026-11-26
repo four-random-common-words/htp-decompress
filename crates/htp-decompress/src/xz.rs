@@ -10,9 +10,9 @@ const MAGIC: [u8; 6] = [0xFD, b'7', b'z', b'X', b'Z', 0x00];
 /// of it out, and a pass that hits damage is lost, so smaller passes lose less output before damage.
 const PASS_INPUT: usize = 4096;
 
-/// Added to the limit lzma-rust2 gets. lzma-rust2 counts its own working memory (40 KiB) on top of the dictionary, so
-/// without this a dictionary exactly at the limit would fail; with it, the limit compares against the declared dictionary.
-const LIMIT_HEADROOM_KIB: u64 = 64;
+/// Added to the limit lzma-rust2 gets. lzma-rust2 0.25.0 counts a fixed 40 KiB of its own working memory on top of the
+/// dictionary, so adding the same amount makes the limit compare exactly against the declared dictionary.
+const LIMIT_HEADROOM_KIB: u64 = 40;
 
 /// Where the decoder is between and inside streams.
 enum Stage {

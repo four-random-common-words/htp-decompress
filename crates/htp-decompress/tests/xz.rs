@@ -182,10 +182,12 @@ fn compares_the_limit_with_the_declared_dictionary() {
         &input,
         65_536,
         65_536,
-        Limits { memory: 99_614_720 },
+        Limits {
+            memory: 100_662_272,
+        },
     );
 
-    // `xz --lzma2=dict=65MiB` declares the next dictionary size LZMA2 can encode, 96 MiB.
+    // `xz --lzma2=dict=65MiB` declares the next dictionary size LZMA2 can encode, 96 MiB; 1 KiB less must fail.
     assert_eq!(fits.result, Ok(()));
     assert!(
         matches!(short.result, Err(Error::MemoryLimit { .. })),

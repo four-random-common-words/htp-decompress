@@ -122,7 +122,6 @@ export class HtpDecompressionStream {
   #step(decoder: WasmDecoder): boolean {
     const input = this.#input;
     const { consumed, produced, done } = decoder.process(input?.bytes ?? new Uint8Array(), this.#closing !== undefined);
-
     this.#drained = consumed === 0 && produced === 0;
     this.#stalled = this.#drained && !done ? this.#stalled + 1 : 0;
 

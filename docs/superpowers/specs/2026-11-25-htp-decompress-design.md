@@ -192,9 +192,12 @@ Measured: miniz_oxide inflate alone builds to 31 KB raw, 13 KB gzipped.
 
 #### xz (lzma-rust2 0.25, `default-features = false, features = ["std", "xz"]`)
 
-- `XzStream::new_mem_limit(true, limit_kib)`: concatenated streams and padding are handled by the
-  crate, checks (CRC32, CRC64, SHA-256) are verified, BCJ and delta filters are supported, and the
-  dictionary grows with the output instead of being allocated up front.
+- One `XzStream::new_mem_limit(false, limit_kib)` per stream. The decoder handles concatenation
+  itself: after a stream, zero bytes are padding in multiples of four, then comes the xz magic (a
+  new stream) or trailing data. Checks (CRC32, CRC64, SHA-256) are verified, BCJ and delta filters
+  are supported, and the dictionary grows with the output instead of being allocated up front.
+- `limit_kib` is the memory limit in KiB plus the fixed 40 KiB of working memory lzma-rust2 0.25.0
+  counts on top of the dictionary, so the limit compares exactly against the declared dictionary.
 - `Action::Run` while input may follow, `Action::Finish` with `end_of_input`.
 - Map its errors: unexpected end of input to `Truncated`, its memory-limit error to `MemoryLimit`,
   unsupported filter chains to `Unsupported`, everything else to `Corrupt`. After a failing call,
