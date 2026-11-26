@@ -12,6 +12,8 @@ pub struct DecodeBuffer {
 
     pub window_size: usize,
     total_output_counter: u64,
+    /// How many leading bytes of `buffer` read_decoded has already handed out.
+    emitted: usize,
     #[cfg(feature = "hash")]
     pub hash: twox_hash::XxHash64,
 }
@@ -38,6 +40,7 @@ impl DecodeBuffer {
             dict_content: Vec::new(),
             window_size,
             total_output_counter: 0,
+            emitted: 0,
             #[cfg(feature = "hash")]
             hash: twox_hash::XxHash64::with_seed(0),
         }
@@ -46,7 +49,7 @@ impl DecodeBuffer {
     pub fn reset(&mut self, window_size: usize) {
         self.window_size = window_size;
         self.buffer.clear();
-        self.buffer.reserve(self.window_size);
+        self.emitted = 0;
         self.dict_content.clear();
         self.total_output_counter = 0;
         #[cfg(feature = "hash")]
@@ -57,6 +60,45 @@ impl DecodeBuffer {
 
     pub fn len(&self) -> usize {
         self.buffer.len()
+    }
+
+    /// Copy decoded bytes not handed out yet into `target`, oldest first, without waiting for
+    /// them to leave the window, and feed them to the checksum. Returns how many bytes were
+    /// copied.
+    ///
+    /// The drain functions also hand out and hash the bytes they remove, so use either this or
+    /// them for a frame, not both.
+    pub fn read_decoded(&mut self, target: &mut [u8]) -> usize {
+        let (slice1, slice2) = self.buffer.as_slices();
+        let unread1 = slice1.get(self.emitted..).unwrap_or(&[]);
+        let unread2 = &slice2[self.emitted.saturating_sub(slice1.len())..];
+        let n1 = unread1.len().min(target.len());
+        let n2 = unread2.len().min(target.len() - n1);
+        target[..n1].copy_from_slice(&unread1[..n1]);
+        target[n1..][..n2].copy_from_slice(&unread2[..n2]);
+
+        #[cfg(feature = "hash")]
+        {
+            self.hash.write(&unread1[..n1]);
+            self.hash.write(&unread2[..n2]);
+        }
+
+        let copied = n1 + n2;
+        self.emitted += copied;
+
+        // Release the handed out bytes that back-references can no longer reach.
+        if let Some(beyond_window) = self.can_drain_to_window_size() {
+            let dropped = self.emitted.min(beyond_window);
+            self.buffer.drop_first_n(dropped);
+            self.emitted -= dropped;
+        }
+
+        copied
+    }
+
+    /// How many decoded bytes [DecodeBuffer::read_decoded] has not handed out yet.
+    pub fn decoded_unread(&self) -> usize {
+        self.buffer.len() - self.emitted
     }
 
     pub fn extend_and_fill(&mut self, fill_with: u8, fill_length: usize) {
@@ -230,6 +272,7 @@ impl DecodeBuffer {
         vec.extend_from_slice(slice1);
         vec.extend_from_slice(slice2);
         self.buffer.clear();
+        self.emitted = 0;
         vec
     }
 
@@ -264,6 +307,7 @@ impl DecodeBuffer {
 
         struct DrainGuard<'a> {
             buffer: &'a mut RingBuffer,
+            emitted: &'a mut usize,
             amount: usize,
         }
 
@@ -271,12 +315,14 @@ impl DecodeBuffer {
             fn drop(&mut self) {
                 if self.amount != 0 {
                     self.buffer.drop_first_n(self.amount);
+                    *self.emitted = self.emitted.saturating_sub(self.amount);
                 }
             }
         }
 
         let mut drain_guard = DrainGuard {
             buffer: &mut self.buffer,
+            emitted: &mut self.emitted,
             amount: 0,
         };
 
@@ -459,5 +505,118 @@ mod tests {
             }
         }
         assert_eq!(short_writer.buf.len(), repeats * 50 + 100);
+    }
+
+    #[test]
+    fn read_decoded_hands_out_bytes_inside_the_window() {
+        let mut buffer = DecodeBuffer::new(1024);
+        buffer.push(b"0123456789");
+
+        let mut target = [0u8; 64];
+        let copied = buffer.read_decoded(&mut target);
+
+        assert_eq!(&target[..copied], b"0123456789");
+    }
+
+    #[test]
+    fn read_decoded_keeps_the_window_for_back_references() {
+        let mut buffer = DecodeBuffer::new(8);
+        let mut target = [0u8; 64];
+        buffer.push(b"abcdefgh");
+        buffer.read_decoded(&mut target);
+        buffer.push(b"ij");
+        buffer.read_decoded(&mut target);
+
+        buffer.repeat(8, 3).unwrap();
+        let copied = buffer.read_decoded(&mut target);
+
+        assert_eq!(&target[..copied], b"cde");
+        assert_eq!(buffer.len(), 8);
+    }
+
+    #[test]
+    fn read_decoded_copies_and_hashes_across_the_ring_buffer_wrap() {
+        let data: Vec<u8> = (0..1000u32).map(|i| (i % 251) as u8).collect();
+        let mut buffer = DecodeBuffer::new(64);
+        let mut output = vec![0u8; data.len()];
+        let mut filled = 0;
+        let mut wrapped = false;
+        for chunk in data.chunks(100) {
+            buffer.push(chunk);
+            wrapped |= !buffer.buffer.as_slices().1.is_empty();
+
+            loop {
+                let end = (filled + 7).min(output.len());
+                let copied = buffer.read_decoded(&mut output[filled..end]);
+
+                if copied == 0 {
+                    break;
+                }
+
+                filled += copied;
+            }
+        }
+
+        assert!(wrapped);
+        assert_eq!(output, data);
+        #[cfg(feature = "hash")]
+        assert_eq!(
+            core::hash::Hasher::finish(&buffer.hash),
+            twox_hash::XxHash64::oneshot(0, &data)
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "hash")]
+    fn read_decoded_feeds_the_checksum() {
+        use core::hash::Hasher;
+
+        let data: Vec<u8> = (0..1000u32).map(|i| (i % 251) as u8).collect();
+        let mut buffer = DecodeBuffer::new(64);
+        buffer.push(&data);
+
+        let mut piece = [0u8; 7];
+        while buffer.read_decoded(&mut piece) > 0 {}
+
+        assert_eq!(buffer.hash.finish(), twox_hash::XxHash64::oneshot(0, &data));
+    }
+
+    #[test]
+    fn drain_paths_forget_the_bytes_they_drop() {
+        let mut buffer = DecodeBuffer::new(4);
+        let mut target = [0u8; 64];
+        buffer.push(b"abcd");
+        buffer.read_decoded(&mut target[..3]);
+        buffer.push(b"efgh");
+
+        let drained = buffer.drain_to_window_size().unwrap();
+        let unread = buffer.decoded_unread();
+        let copied = buffer.read_decoded(&mut target);
+
+        assert_eq!(drained, b"abcd");
+        assert_eq!(unread, 4);
+        assert_eq!(&target[..copied], b"efgh");
+    }
+
+    #[test]
+    fn reset_does_not_reserve_the_window() {
+        let mut buffer = DecodeBuffer::new(1024);
+        buffer.reset(134_217_728);
+
+        assert!(buffer.buffer.capacity() < 1_048_576);
+    }
+
+    #[test]
+    fn reset_starts_handing_out_the_new_frame() {
+        let mut buffer = DecodeBuffer::new(1024);
+        let mut target = [0u8; 64];
+        buffer.push(b"old frame");
+        buffer.read_decoded(&mut target);
+        buffer.reset(1024);
+        buffer.push(b"new");
+
+        let copied = buffer.read_decoded(&mut target);
+
+        assert_eq!(&target[..copied], b"new");
     }
 }

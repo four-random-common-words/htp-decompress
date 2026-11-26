@@ -64,4 +64,5 @@ pub mod io_nostd;
 #[cfg(not(feature = "std"))]
 pub use io_nostd as io;
 
-mod tests;
+// htp-decompress: the corpus files these tests read are not in the published crate.
+// mod tests;

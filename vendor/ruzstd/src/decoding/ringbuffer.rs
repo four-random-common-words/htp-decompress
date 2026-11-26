@@ -44,6 +44,12 @@ impl RingBuffer {
         x + y
     }
 
+    /// Return the size of the allocation (in bytes).
+    #[cfg(test)]
+    pub(crate) fn capacity(&self) -> usize {
+        self.cap
+    }
+
     /// Return the amount of available space (in bytes) of the buffer.
     pub fn free(&self) -> usize {
         let (x, y) = self.free_slice_lengths();

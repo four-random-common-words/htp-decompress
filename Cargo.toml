@@ -3,6 +3,9 @@ resolver = "3"
 members = ["crates/htp-decompress"]
 exclude = ["vendor/ruzstd", "crates/htp-decompress/fuzz"]
 
+[patch.crates-io]
+ruzstd = { path = "vendor/ruzstd" }
+
 [profile.release]
 lto = true
 codegen-units = 1

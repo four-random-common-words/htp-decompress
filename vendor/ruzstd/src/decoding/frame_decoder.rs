@@ -423,6 +423,27 @@ impl FrameDecoder {
         }
     }
 
+    /// Copies decoded bytes not handed out yet into `target`, oldest first, up to `target.len()`,
+    /// without waiting for them to leave the window. Returns how many bytes were copied. They
+    /// also go into the calculated checksum.
+    ///
+    /// The collect and read functions hand out and hash the bytes they remove as well, so use
+    /// either this or them for a frame, not both.
+    pub fn read_decoded(&mut self, target: &mut [u8]) -> usize {
+        match &mut self.state {
+            None => 0,
+            Some(s) => s.decoder_scratch.buffer.read_decoded(target),
+        }
+    }
+
+    /// How many decoded bytes [FrameDecoder::read_decoded] has not handed out yet.
+    pub fn decoded_unread(&self) -> usize {
+        match &self.state {
+            None => 0,
+            Some(s) => s.decoder_scratch.buffer.decoded_unread(),
+        }
+    }
+
     /// Decodes as many blocks as possible from the source slice and reads from the decodebuffer into the target slice
     /// The source slice may contain only parts of a frame but must contain at least one full block to make progress
     ///
