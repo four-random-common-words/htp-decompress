@@ -96,6 +96,9 @@ pub struct Decoder {
 
 impl Decoder {
     pub fn new(format: Format, limits: Limits) -> Decoder {
+        #[cfg(not(any(feature = "xz", feature = "zstd")))]
+        let _ = limits;
+
         let inner = match format {
             #[cfg(feature = "gzip")]
             Format::Gzip => Box::new(gzip::GzipDecoder::new()),

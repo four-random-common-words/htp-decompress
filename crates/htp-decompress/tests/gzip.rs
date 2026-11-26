@@ -110,10 +110,11 @@ fn reports_expected_errors() {
             fixture.file
         );
 
-        // Damaged data can decode to wrong bytes before a checksum exposes it, so for Corrupt only the first 64 KiB must match.
-        let checked = match error {
-            Error::Corrupt(_) => &decoded.output[..decoded.output.len().min(65_536)],
-            _ => &decoded.output,
+        // Only the flipped-byte fixture can decode to wrong bytes before the checksum exposes it, so only its first 64 KiB must match.
+        let checked = if fixture.file == "gzip/corrupt.gz" {
+            &decoded.output[..decoded.output.len().min(65_536)]
+        } else {
+            &decoded.output
         };
 
         assert!(fixture.original.starts_with(checked), "{}", fixture.file);
