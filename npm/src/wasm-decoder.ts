@@ -13,6 +13,9 @@ const UNSUPPORTED = -3;
 const MEMORY_LIMIT = -4;
 const TRAILING_DATA = -5;
 
+// htp_decoder_new treats a larger memory limit as this one, the most wasm32 can address.
+const MAX_MEMORY_LIMIT = 4_294_967_295;
+
 // The ResultArea: consumed (u32) at 0, produced (u32) at 4, message pointer (u32) at 8, message length (u32) at 12,
 // needed (f64) at 16, all little-endian.
 const RESULT_BYTES = 24;
@@ -38,6 +41,7 @@ export class WasmDecoder {
   /** Undefined once disposed or trapped. */
   #exports: Exports | undefined;
   #failure: HtpDecompressionError | undefined;
+  /** The limit the decoder applies. */
   readonly #memoryLimit: number;
   readonly #decoder: number;
   readonly #input: number;
@@ -47,7 +51,7 @@ export class WasmDecoder {
 
   private constructor(exports: Exports, memoryLimit: number) {
     this.#exports = exports;
-    this.#memoryLimit = memoryLimit;
+    this.#memoryLimit = Math.min(memoryLimit, MAX_MEMORY_LIMIT);
     this.#decoder = exports.htp_decoder_new(memoryLimit);
     this.#input = exports.htp_alloc(INPUT_SLICE_BYTES);
     this.#output = exports.htp_alloc(OUTPUT_CHUNK_BYTES);

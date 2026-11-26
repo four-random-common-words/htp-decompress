@@ -69,11 +69,13 @@ pub unsafe extern "C" fn htp_free(ptr: *mut u8, len: usize) {
 
 /// Creates a decoder for this build's format.
 ///
-/// `memory_limit` is a whole number of bytes, as a JavaScript number (an `f64`).
+/// `memory_limit` is a whole number of bytes, as a JavaScript number (an `f64`). A limit above
+/// `u32::MAX` counts as `u32::MAX`: wasm32 cannot address more, and ruzstd would truncate a larger
+/// window to a `usize`.
 #[unsafe(no_mangle)]
 pub extern "C" fn htp_decoder_new(memory_limit: f64) -> *mut Decoder {
     let limits = Limits {
-        memory: memory_limit as u64,
+        memory: (memory_limit as u64).min(u64::from(u32::MAX)),
     };
 
     Box::into_raw(Box::new(Decoder::new(FORMAT, limits)))

@@ -78,6 +78,21 @@ it('keeps xz memory near the decoded size', async () => {
   expect(decoder.memoryBytes() - before).toBeLessThan(41_943_040);
 });
 
+it('treats a memory limit of 4 GiB or more as the most wasm32 can address', async () => {
+  const fixture = fixtures('zstd').find((candidate) => candidate.file === 'zstd/hex-3.zst')!;
+  const decoder = await WasmDecoder.create('zstd', 2 ** 33);
+  const limited = await WasmDecoder.create('zstd', 2 ** 33);
+
+  // A frame header whose Window_Descriptor 0xb0 declares a 4 GiB window.
+  const output = decodeAll(decoder, readFixture(fixture.file));
+  const error = thrown(() => decodeAll(limited, new Uint8Array([0x28, 0xb5, 0x2f, 0xfd, 0x00, 0xb0])));
+
+  expect(sameBytes(output, fixture.original)).toBe(true);
+  expect(error).toBeInstanceOf(HtpDecompressionError);
+  expect(error.code).toBe('memory-limit');
+  expect(error.message).toBe('decoding needs 4294967296 bytes, which exceeds the memory limit of 4294967295 bytes');
+});
+
 it('gives every decoder its own memory', async () => {
   const zstd = fixtures('zstd');
   const hex = zstd.find((fixture) => fixture.file === 'zstd/hex-3.zst')!;

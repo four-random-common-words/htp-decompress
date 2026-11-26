@@ -51,7 +51,7 @@ of `Uint8Array` chunks. The constructor throws a `TypeError` for an unknown form
 | `memoryLimit` | `134217728` (128 MiB)  | Largest zstd window or xz dictionary a file may declare, in bytes.       |
 
 The limit counts what the file declares, not what is allocated: memory follows the decoded output. `DEFAULT_MEMORY_LIMIT`
-exports the default.
+exports the default. A limit of 4 GiB or more acts as 4,294,967,295 bytes, the most a WebAssembly decoder can address.
 
 ### Errors
 
