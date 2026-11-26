@@ -163,6 +163,11 @@ impl ZstdDecoder {
             )
             .map_err(|_| Error::Corrupt("invalid zstd block"))?;
 
+        // ruzstd does not bound a block's literals. Nothing was unread before, so this is the block's output alone.
+        if self.frame.decoded_unread() > MAX_BLOCK_SIZE {
+            return Err(Error::Corrupt("zstd block too large"));
+        }
+
         self.pending.clear();
 
         if last {

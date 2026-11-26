@@ -163,6 +163,25 @@ fn decodes_at_most_one_block_per_call() {
 }
 
 #[test]
+fn rejects_a_block_that_decodes_to_more_than_128_kib() {
+    // One compressed block whose 3-byte RLE literals header declares 1,000,000 literals.
+    let input = [
+        0x28, 0xb5, 0x2f, 0xfd, 0x00, 0x50, 0x2d, 0x00, 0x00, 0x0d, 0x24, 0xf4, 0x41, 0x00,
+    ];
+
+    let decoded = support::decode(
+        Format::Zstd,
+        &input,
+        input.len(),
+        2_000_000,
+        Limits::default(),
+    );
+
+    assert_eq!(decoded.result, Err(Error::Corrupt("zstd block too large")));
+    assert!(decoded.max_produced_per_call <= 131_072);
+}
+
+#[test]
 fn rejects_a_window_over_the_limit() {
     let input = support::read("zstd/aaaa-long28.zst");
 
