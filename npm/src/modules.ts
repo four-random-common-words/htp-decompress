@@ -2,12 +2,15 @@ import type { DecompressionFormat } from './format.js';
 
 const modules = new Map<DecompressionFormat, Promise<WebAssembly.Module>>();
 
-/** Compiles the format's wasm module on first use; later calls share it. */
+/** Compiles the format's wasm module on first use; later calls share it, unless loading it failed. */
 export function loadModule(format: DecompressionFormat): Promise<WebAssembly.Module> {
   let module = modules.get(format);
   if (module === undefined) {
     module = compile(format);
     modules.set(format, module);
+
+    // Forgotten on failure, so that a later stream tries again: a lazy chunk can fail to load while offline, say.
+    module.catch(() => modules.delete(format));
   }
 
   return module;

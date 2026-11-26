@@ -48,22 +48,31 @@ export function fixtures(format: DecompressionFormat): Fixture[] {
 
 /** Drives `decoder` over the whole of `input` to the end and returns the output; errors are rethrown. */
 export function decodeAll(decoder: WasmDecoder, input: Uint8Array): Uint8Array {
-  const steps = decodeSteps(decoder, input);
-  let step = steps.next();
-  while (!step.done) {
-    step = steps.next();
+  return finish(decodeSteps(decoder, input));
+}
+
+/** Like `decodeAll`, but returns the output decoded before an error together with the error. */
+export function decodeUntilError(decoder: WasmDecoder, input: Uint8Array): { output: Uint8Array; error: unknown } {
+  const chunks: Uint8Array[] = [];
+  try {
+    finish(decodeSteps(decoder, input, chunks));
+  } catch (error) {
+    return { output: concat(chunks), error };
   }
 
-  return step.value;
+  return { output: concat(chunks), error: undefined };
 }
 
 /**
  * Like `decodeAll`, one `process` call per step, so that decoders can be interleaved.
  *
- * Throws when the decoder makes no progress three calls in a row.
+ * Each output chunk is appended to `chunks`. Throws when the decoder makes no progress three calls in a row.
  */
-export function* decodeSteps(decoder: WasmDecoder, input: Uint8Array): Generator<void, Uint8Array, void> {
-  const chunks: Uint8Array[] = [];
+export function* decodeSteps(
+  decoder: WasmDecoder,
+  input: Uint8Array,
+  chunks: Uint8Array[] = []
+): Generator<void, Uint8Array, void> {
   let offset = 0;
   let stalled = 0;
   for (;;) {
@@ -86,6 +95,15 @@ export function* decodeSteps(decoder: WasmDecoder, input: Uint8Array): Generator
 
     yield;
   }
+}
+
+function finish<T>(steps: Generator<void, T, void>): T {
+  let step = steps.next();
+  while (!step.done) {
+    step = steps.next();
+  }
+
+  return step.value;
 }
 
 function sourceBytes(source: string): Uint8Array {
