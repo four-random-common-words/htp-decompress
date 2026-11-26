@@ -99,13 +99,13 @@ impl Decoder {
         #[cfg(not(any(feature = "xz", feature = "zstd")))]
         let _ = limits;
 
-        let inner = match format {
+        let inner: Box<dyn FormatDecoder> = match format {
             #[cfg(feature = "gzip")]
             Format::Gzip => Box::new(gzip::GzipDecoder::new()),
             #[cfg(feature = "xz")]
             Format::Xz => xz::new(limits),
             #[cfg(feature = "zstd")]
-            Format::Zstd => zstd::new(limits),
+            Format::Zstd => Box::new(zstd::ZstdDecoder::new(limits)),
         };
 
         Decoder { inner, state: None }
