@@ -103,7 +103,7 @@ impl Decoder {
             #[cfg(feature = "gzip")]
             Format::Gzip => Box::new(gzip::GzipDecoder::new()),
             #[cfg(feature = "xz")]
-            Format::Xz => xz::new(limits),
+            Format::Xz => Box::new(xz::XzDecoder::new(limits)),
             #[cfg(feature = "zstd")]
             Format::Zstd => Box::new(zstd::ZstdDecoder::new(limits)),
         };
