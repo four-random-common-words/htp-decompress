@@ -12,7 +12,7 @@ mkdirSync(new URL('src/wasm/', NPM), { recursive: true });
 const rows = FORMATS.map((format) => {
   const wasm = readFileSync(new URL(`build/${format}.wasm`, NPM));
 
-  writeFileSync(new URL(`src/wasm/${format}.ts`, NPM), `export default '${wasm.toString('base64')}';\n`);
+  writeFileSync(new URL(`src/wasm/${format}.ts`, NPM), `const base64: string = '${wasm.toString('base64')}';\n\nexport default base64;\n`);
 
   return `| ${format} | ${wasm.length} | ${gzipSync(wasm, { level: 9 }).length} |`;
 });

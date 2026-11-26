@@ -3,3 +3,4 @@ npm/node_modules/
 npm/dist/
 npm/build/
 npm/src/wasm/
+npm/LICENSE
