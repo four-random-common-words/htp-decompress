@@ -31,8 +31,8 @@ Node and Rust are pinned by `mise.toml` and `rust-toolchain.toml`. The build nee
     npm test
     npm run typecheck
 
-`npm run build` writes `npm/src/wasm/<format>.ts` (git-ignored), compiles to `npm/dist` and copies `LICENSE` into `npm/`
-(also git-ignored). `npm pack` then produces the package.
+`npm run build` writes `npm/src/wasm/<format>.ts` (git-ignored), compiles to `npm/dist` and copies `LICENSE` and
+`THIRD-PARTY-NOTICES.md` into `npm/` (also git-ignored). `npm pack` then produces the package.
 
 ## Regenerating the fixtures
 
@@ -44,4 +44,5 @@ The tool versions used are listed in `fixtures/README.md`.
 
 ## License
 
-GPL-3.0-only, see `LICENSE`.
+GPL-3.0-only, see `LICENSE`. The WebAssembly modules also contain third-party crates under MIT, Apache-2.0 and other
+permissive licenses, listed with their notices in `THIRD-PARTY-NOTICES.md`.

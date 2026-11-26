@@ -10,10 +10,11 @@ const code = 'corrupt' satisfies HtpDecompressionErrorCode;
 const options = { memoryLimit: 1 } satisfies HtpDecompressionOptions;
 
 describe('package', () => {
-  it('packs only package.json, README.md, LICENSE and dist', () => {
+  it('packs only package.json, README.md, LICENSE, THIRD-PARTY-NOTICES.md and dist', () => {
     const output = execFileSync('npm', ['pack', '--dry-run', '--json'], { encoding: 'utf8' });
     const files = (JSON.parse(output) as { files: { path: string }[] }[])[0].files.map((file) => file.path);
-    const allowed = files.filter((path) => ['package.json', 'README.md', 'LICENSE'].includes(path) || path.startsWith('dist/'));
+    const top = ['package.json', 'README.md', 'LICENSE', 'THIRD-PARTY-NOTICES.md'];
+    const allowed = files.filter((path) => top.includes(path) || path.startsWith('dist/'));
 
     expect(files).toEqual(allowed);
     expect(files).toEqual(
@@ -21,6 +22,7 @@ describe('package', () => {
         'package.json',
         'README.md',
         'LICENSE',
+        'THIRD-PARTY-NOTICES.md',
         'dist/index.js',
         'dist/index.d.ts',
         'dist/wasm/gzip.js',

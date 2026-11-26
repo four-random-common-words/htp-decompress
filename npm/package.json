@@ -19,11 +19,12 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "THIRD-PARTY-NOTICES.md"
   ],
   "scripts": {
     "build:wasm": "bash ../scripts/build-wasm.sh",
-    "build": "npm run build:wasm && tsc -p tsconfig.build.json && cp ../LICENSE LICENSE",
+    "build": "npm run build:wasm && tsc -p tsconfig.build.json && cp ../LICENSE LICENSE && cp ../THIRD-PARTY-NOTICES.md THIRD-PARTY-NOTICES.md",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
