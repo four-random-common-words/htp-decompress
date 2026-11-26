@@ -94,11 +94,12 @@ jobs:
         with:
           name: npm-package
 
-      # A re-run skips the publish when the version is already on npm (versions are immutable), so a
-      # failure in a later step can be recovered by re-running this job. No token secret: npm
-      # authenticates through the trusted publisher configured on npmjs.com. The build job checked
-      # that the tag is v plus the package version.
-      - name: Publish to npm
+      # CI only stages the version: it goes live when the owner approves it on npm with 2FA
+      # (`npm stage approve`), and the trusted publisher does not allow `npm publish`. A re-run skips
+      # staging when the version is already on npm, so after approving, re-running this job finishes
+      # the release. No token secret: npm authenticates through the trusted publisher configured on
+      # npmjs.com. The build job checked that the tag is v plus the package version.
+      - name: Stage on npm
         env:
           TARBALL: ${{ needs.build.outputs.tarball }}
         run: |
@@ -112,9 +113,9 @@ jobs:
             exit 1
           fi
           if [ "$published" = "$version" ]; then
-            echo "htp-decompress@$version is already on npm, skipping the publish"
+            echo "htp-decompress@$version is already on npm, skipping staging"
           else
-            npm publish "$TARBALL" --provenance --access public
+            npm stage publish "$TARBALL" --provenance --access public
           fi
 
       - uses: softprops/action-gh-release@v3

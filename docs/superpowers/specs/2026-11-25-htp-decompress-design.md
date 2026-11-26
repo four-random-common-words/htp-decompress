@@ -344,9 +344,11 @@ Package shape: `"type": "module"`, an `exports` map, `"sideEffects": false`, ESM
 - Published to the public npm registry as `htp-decompress` (unscoped; the name was free on
   2026-11-25). web-ui depends on it like any other package, so its Docker build and CI need nothing
   extra.
-- The release workflow publishes on `v*` tags with npm provenance. The first version is published
-  by hand from a maintainer's npm account; after that, the package is set up for npm trusted
-  publishing from `release.yml`, so CI needs no long-lived npm token.
+- The release workflow stages a version on `v*` tags with npm provenance (`npm stage publish`);
+  it goes live only when the owner approves it with their npm second factor, so nobody else can
+  release. The first version is published by hand from the owner's npm account; after that, the
+  package is set up for npm trusted publishing from `release.yml` with direct `npm publish` not
+  allowed, so CI needs no long-lived npm token.
 - Local development before a release: web-ui points at the built package by path
   (`"htp-decompress": "file:../htp-decompress/npm"`). This works for `ng serve` and Vitest on a
   developer machine, not in web-ui's Docker build or CI, and is never committed in web-ui.
@@ -393,8 +395,9 @@ TypeScript (Vitest on Node 24, against the built wasm):
 
 - `ci.yml` on pushes and pull requests: rustfmt, clippy, `cargo test --locked`, wasm builds,
   `npm ci` and the Vitest suite, and a report of the three wasm sizes.
-- `release.yml` on `v*` tags, like htp-agent-rust: build and test as above, `npm publish` with
-  provenance, and create the GitHub release (with the `npm pack` tarball attached). The Cargo
+- `release.yml` on `v*` tags, like htp-agent-rust: build and test as above, `npm stage publish`
+  with provenance (the owner approves the staged version), and create the GitHub release (with
+  the `npm pack` tarball attached). The Cargo
   workspace and the npm package share one version, and the tag must match it.
 
 ### web-ui integration (the last phase, a web-ui pull request)
@@ -459,7 +462,8 @@ in Deno (V8): zstd 135 to 293 MiB/s, xz 35 to 107 MiB/s (about 1.3x the time of 
 6. `detectFormat` lives in the package, so format knowledge stays in one place.
 7. No Worker, no deflate or deflate-raw, no crates.io publishing for now.
 8. Distribution: public npm registry (owner confirmed), first publish by hand, then trusted
-   publishing with provenance from CI; a `file:` path only for local development.
+   publishing with provenance from CI as staged versions the owner approves with 2FA (owner
+   confirmed); a `file:` path only for local development.
 9. Licensed GPL-3.0. Hosting is the owner's decision: a personal repository for now (see
    Distribution).
 10. ruzstd must hand out output right after each block and must not reserve the window up front;
