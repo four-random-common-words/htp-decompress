@@ -107,7 +107,7 @@ The owner picked A.
 
 ```
 Cargo.toml              workspace
-rust-toolchain.toml     stable + wasm32-unknown-unknown
+rust-toolchain.toml     Rust 1.100.0 + wasm32-unknown-unknown
 crates/htp-decompress/  core library: Decoder for all three formats, features gzip/xz/zstd
 crates/htp-decompress-wasm/  cdylib: raw wasm exports over the core, built once per format
 vendor/ruzstd/          patched ruzstd until the patch is upstream (see zstd below)
