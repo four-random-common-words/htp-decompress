@@ -392,6 +392,55 @@ it('accepts every buffer source', async () => {
   }
 });
 
+it('reports a decoder that makes no progress as an internal error', async () => {
+  const process = vi.fn<WasmDecoder['process']>(() => ({ consumed: 0, produced: 0, done: false }));
+  vi.spyOn(WasmDecoder, 'create').mockImplementation(() => Promise.resolve(stubDecoder(process)));
+
+  // Stuck on written input, and stuck at the end of input.
+  const written = await pipe(new HtpDecompressionStream('gzip'), [new Uint8Array([1, 2, 3])]);
+  const calledWithInput = process.mock.calls.length;
+  const closed = await pipe(new HtpDecompressionStream('gzip'), []);
+
+  for (const { bytes, error } of [written, closed]) {
+    expect(bytes.length).toBe(0);
+    expect(error).toBeInstanceOf(HtpDecompressionError);
+    expect(error).toHaveProperty('code', 'internal');
+  }
+
+  expect(calledWithInput).toBe(3);
+  expect(process).toHaveBeenCalledTimes(6);
+});
+
+it('counts calls without progress only while nothing new comes', async () => {
+  const budgetMs = timeSlice.budgetMs;
+
+  // Each chunk is taken on the third call, and an empty call makes no progress, so only a count that starts over with
+  // each write lets this decode.
+  let calls = 0;
+  const process = vi.fn<WasmDecoder['process']>((input, endOfInput) => {
+    if (endOfInput) {
+      return { consumed: 0, produced: 0, done: true };
+    }
+
+    calls = input.length === 0 ? 0 : calls + 1;
+
+    return { consumed: calls === 3 ? input.length : 0, produced: 0, done: false };
+  });
+  vi.spyOn(WasmDecoder, 'create').mockResolvedValueOnce(stubDecoder(process));
+
+  // No yields, so that each empty call happens before the next write.
+  timeSlice.budgetMs = Infinity;
+
+  try {
+    const { error } = await pipe(new HtpDecompressionStream('gzip'), [new Uint8Array([1]), new Uint8Array([2])]);
+
+    expect(error).toBeUndefined();
+    expect(process.mock.calls.map(([input]) => input.length)).toEqual([1, 1, 1, 0, 1, 1, 1, 0, 0]);
+  } finally {
+    timeSlice.budgetMs = budgetMs;
+  }
+});
+
 it('reports a failed load as an internal error', async () => {
   const cause = new Error('out of memory');
   vi.spyOn(WasmDecoder, 'create').mockRejectedValueOnce(cause);
@@ -555,6 +604,13 @@ function watchDecoders(): () => Promise<WasmDecoder[]> {
   const create = vi.spyOn(WasmDecoder, 'create');
 
   return () => Promise.all(create.mock.results.map((result) => result.value as Promise<WasmDecoder>));
+}
+
+/** A decoder that runs `process` and has no output to hand out. */
+function stubDecoder(process: WasmDecoder['process']): WasmDecoder {
+  const stub = { process, takeOutput: () => new Uint8Array(), dispose: () => {}, memoryBytes: () => 0 };
+
+  return stub as unknown as WasmDecoder;
 }
 
 /** The memory of each decoder made, 0 for a dropped one. */

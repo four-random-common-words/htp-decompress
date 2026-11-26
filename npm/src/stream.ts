@@ -46,6 +46,8 @@ export class HtpDecompressionStream {
   #waiting: (() => void) | undefined;
   /** Whether the last decoder call made no progress: only then can the decoder hold no output that it could hand out. */
   #drained = true;
+  /** Decoder calls in a row without progress since the last write or close. */
+  #stalled = 0;
   #ended = false;
 
   constructor(format: DecompressionFormat, options?: HtpDecompressionOptions) {
@@ -122,6 +124,12 @@ export class HtpDecompressionStream {
     const { consumed, produced, done } = decoder.process(input?.bytes ?? new Uint8Array(), this.#closing !== undefined);
 
     this.#drained = consumed === 0 && produced === 0;
+    this.#stalled = this.#drained && !done ? this.#stalled + 1 : 0;
+
+    // A decoder that takes and gives nothing three times while nothing new comes would keep this pull spinning.
+    if (this.#stalled === 3) {
+      throw new HtpDecompressionError('internal', 'the decoder made no progress in 3 calls in a row');
+    }
 
     if (input !== undefined) {
       input.bytes = input.bytes.subarray(consumed);
@@ -162,6 +170,7 @@ export class HtpDecompressionStream {
     // Settles once the decoder has taken all of the bytes, so that backpressure reaches the source.
     return new Promise((resolve, reject) => {
       this.#input = { bytes, resolve, reject };
+      this.#stalled = 0;
       this.#wake();
     });
   }
@@ -170,6 +179,7 @@ export class HtpDecompressionStream {
   #close(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.#closing = { resolve, reject };
+      this.#stalled = 0;
       this.#wake();
     });
   }
