@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+# A newer push to the same ref supersedes the running checks.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Reads rust-toolchain.toml (stable, wasm32 target, rustfmt, clippy).
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+
+      # Must match mise.toml. setup-node@v4 cannot read that file.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+
+      # One module per format; the default feature only serves the native checks above.
+      - name: Clippy wasm crate (gzip)
+        run: cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features gzip --locked -- -D warnings
+      - name: Clippy wasm crate (xz)
+        run: cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features xz --locked -- -D warnings
+      - name: Clippy wasm crate (zstd)
+        run: cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features zstd --locked -- -D warnings
+
+      - run: cargo test --locked
+
+      # Builds ruzstd's zstd-sys dev-dependency with the runner's C compiler. No clippy or --all-targets
+      # here: the vendored crate has upstream warnings and a bench whose corpus is not published.
+      - name: Test vendored ruzstd
+        run: cargo test --manifest-path vendor/ruzstd/Cargo.toml --locked
+
+      - run: npm ci
+        working-directory: npm
+
+      # Also appends the wasm size table to $GITHUB_STEP_SUMMARY.
+      - run: npm run build
+        working-directory: npm
+      - run: npm test
+        working-directory: npm
+      - run: npm run typecheck
+        working-directory: npm

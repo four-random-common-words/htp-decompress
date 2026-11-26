@@ -2,6 +2,7 @@
 name = "htp-decompress-wasm"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.95"
 license = "GPL-3.0-only"
 repository = "https://github.com/four-random-common-words/htp-decompress"
 publish = false

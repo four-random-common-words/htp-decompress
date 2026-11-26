@@ -7,8 +7,8 @@ cd "$(dirname "$0")/.."
 mkdir -p npm/build
 
 build() {
-  cargo build --release --target wasm32-unknown-unknown -p htp-decompress-wasm --no-default-features --features "$1"
-  cp target/wasm32-unknown-unknown/release/htp_decompress_wasm.wasm "npm/build/$1.wasm"
+  cargo build --release --locked --target wasm32-unknown-unknown -p htp-decompress-wasm --no-default-features --features "$1"
+  cp "${CARGO_TARGET_DIR:-$PWD/target}/wasm32-unknown-unknown/release/htp_decompress_wasm.wasm" "npm/build/$1.wasm"
 }
 
 build gzip

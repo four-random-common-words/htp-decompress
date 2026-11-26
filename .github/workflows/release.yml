@@ -1,0 +1,58 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      # id-token: npm trusted publishing (OIDC) and provenance. contents: create the GitHub release.
+      id-token: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check the tag against both versions
+        run: |
+          npm_version=$(node -p "require('./npm/package.json').version")
+          crate_version=$(sed -n 's/^version = "\(.*\)"$/\1/p' crates/htp-decompress/Cargo.toml | head -n 1)
+          echo "tag=$GITHUB_REF_NAME npm=$npm_version crate=$crate_version"
+          test "$GITHUB_REF_NAME" = "v$npm_version"
+          test "$GITHUB_REF_NAME" = "v$crate_version"
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+
+      # Must match mise.toml. Node 24.18.0 ships npm 11.16.0; trusted publishing needs 11.5.1 or newer.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+          registry-url: https://registry.npmjs.org
+
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+      - run: cargo test --manifest-path vendor/ruzstd/Cargo.toml --locked
+
+      - run: npm ci
+        working-directory: npm
+      - run: npm run build
+        working-directory: npm
+      - run: npm test
+        working-directory: npm
+      - run: npm run typecheck
+        working-directory: npm
+
+      # No token secret: npm authenticates through the trusted publisher configured on npmjs.com.
+      - run: npm publish --provenance --access public
+        working-directory: npm
+
+      - id: pack
+        run: echo "tarball=$(npm pack --silent)" >> "$GITHUB_OUTPUT"
+        working-directory: npm
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: npm/${{ steps.pack.outputs.tarball }}
