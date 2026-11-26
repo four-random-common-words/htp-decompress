@@ -383,7 +383,12 @@ TypeScript (Vitest on Node 24, against the built wasm):
 - Backpressure: a reader that stops after N bytes leaves at most one step of extra decoding.
 - Memory: reading 16 MiB from a 1 MiB prefix and from the whole of a large-window file
   (`zstd --long=27`, `xz -9`) grows the stream's wasm memory by no more than about twice the bytes
-  decoded (amortized buffer growth), not by the declared window or dictionary.
+  decoded (amortized buffer growth), not by the declared window or dictionary. Measured on
+  2026-11-26, xz reaches about four times: lzma-rust2 doubles its dictionary with `realloc`, and
+  dlmalloc, Rust's wasm32 allocator, grows a block in place only into free space it already has, so
+  each doubling moves the dictionary to new memory above the freed blocks, which never fit the next
+  doubling (`xz -9`: 65.6 MiB at 16 MiB of output; `xz -6` levels off at 17.5 MiB). Accepted: a
+  wrapper around the allocator that made room first halved it, but was not worth its `unsafe` code.
 - Cancel and abort: `readable.cancel()` mid-decode, `pipeThrough` with an aborted signal,
   `writable.abort()`; afterwards a new stream works, and two streams decode concurrently.
 - The web-ui preview's cases, as far as they apply to the package: whole file, file spanning many

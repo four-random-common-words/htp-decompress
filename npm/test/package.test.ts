@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import type { DecompressionFormat, HtpDecompressionErrorCode, HtpDecompressionOptions } from '../src/index.js';
@@ -30,6 +30,16 @@ describe('package', () => {
         'dist/wasm/zstd.js',
       ]),
     );
+  });
+
+  it('puts the third-party notices in LICENSE, after the GPL text', () => {
+    const license = readFileSync(new URL('../LICENSE', import.meta.url), 'utf8');
+    const gpl = readFileSync(new URL('../../LICENSE', import.meta.url), 'utf8');
+    const notices = readFileSync(new URL('../../THIRD-PARTY-NOTICES.md', import.meta.url), 'utf8');
+
+    // License extractors such as Angular's take only the first file named like LICENSE from each package.
+    expect(license.startsWith(gpl)).toBe(true);
+    expect(license.endsWith(notices)).toBe(true);
   });
 
   it('keeps the generated declaration files small', () => {

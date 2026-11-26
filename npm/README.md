@@ -109,10 +109,14 @@ end.
 - xz output can fall short of what `xz -dc` gives by up to 64 KiB at a cut-off in highly repetitive data, and before
   damage: the xz decoder underneath decodes in passes of up to 64 KiB and loses the pass that runs into the cut or the
   damage.
+- xz wasm memory grows to about four times the decoded output, up to twice the dictionary (`xz -9`: 65.6 MiB at 16 MiB
+  of output), because the dictionary doubles and each doubling moves it. zstd stays near twice the output and gzip
+  near 1.3 MiB. A stream's memory is freed when it ends.
 - Each format's WebAssembly module is bundled as base64 and loaded on first use, so bundlers split them into lazy chunks
   without extra configuration.
 
 ## License
 
 GPL-3.0-only. The WebAssembly modules also contain third-party Rust crates under MIT, Apache-2.0 and other permissive
-licenses; their notices are in `THIRD-PARTY-NOTICES.md`.
+licenses; their notices are in `THIRD-PARTY-NOTICES.md`, and again after the GPL text in `LICENSE`, so that tools that
+collect one license file per package pick them up.

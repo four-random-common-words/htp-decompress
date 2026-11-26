@@ -68,14 +68,27 @@ it('keeps zstd memory near the decoded size', async () => {
   expect(decoder.memoryBytes() - before).toBeLessThan(41_943_040);
 });
 
-it('keeps xz memory near the decoded size', async () => {
+it('keeps xz memory within about four times the decoded size all the way through', async () => {
   const decoder = await WasmDecoder.create('xz', 134_217_728);
   const before = decoder.memoryBytes();
+  const chunks: Uint8Array[] = [];
 
-  const output = decodeAll(decoder, readFixture('xz/aaaa-dict65.xz'));
+  // A reader may stop anywhere, as a preview does at its cap, so the memory is checked after every call. Four times,
+  // not two: the dictionary doubles, and each doubling moves it to new memory above the freed blocks (see the spec).
+  const steps = decodeSteps(decoder, readFixture('xz/aaaa-dict65.xz'), chunks);
+  let decoded = 0;
+  let excess = -Infinity;
+  for (let step = steps.next(); ; step = steps.next()) {
+    decoded = chunks.reduce((total, chunk) => total + chunk.length, 0);
+    excess = Math.max(excess, decoder.memoryBytes() - before - 4 * decoded);
 
-  expect(output.length).toBe(16_777_216);
-  expect(decoder.memoryBytes() - before).toBeLessThan(41_943_040);
+    if (step.done) {
+      break;
+    }
+  }
+
+  expect(decoded).toBe(16_777_216);
+  expect(excess).toBeLessThanOrEqual(1_048_576);
 });
 
 it('treats a memory limit of 4 GiB or more as the most wasm32 can address', async () => {
