@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/htp-decompress"]
+members = ["crates/htp-decompress", "crates/htp-decompress-wasm"]
 exclude = ["vendor/ruzstd", "crates/htp-decompress/fuzz"]
 
 [patch.crates-io]

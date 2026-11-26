@@ -79,6 +79,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "htp-decompress-wasm"
+version = "0.1.0"
+dependencies = [
+ "htp-decompress",
+]
+
+[[package]]
 name = "hybrid-array"
 version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"

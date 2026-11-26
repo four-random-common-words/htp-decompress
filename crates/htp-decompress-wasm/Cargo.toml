@@ -1,0 +1,21 @@
+[package]
+name = "htp-decompress-wasm"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-only"
+repository = "https://github.com/four-random-common-words/htp-decompress"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+# Exactly one format per build. The default only lets workspace-wide native checks build the crate;
+# scripts/build-wasm.sh builds each format with --no-default-features.
+[features]
+default = ["gzip"]
+gzip = ["htp-decompress/gzip"]
+xz = ["htp-decompress/xz"]
+zstd = ["htp-decompress/zstd"]
+
+[dependencies]
+htp-decompress = { path = "../htp-decompress", default-features = false }
