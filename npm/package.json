@@ -24,7 +24,7 @@
   ],
   "scripts": {
     "build:wasm": "bash ../scripts/build-wasm.sh",
-    "build": "npm run build:wasm && tsc -p tsconfig.build.json && cp ../LICENSE LICENSE && cp ../THIRD-PARTY-NOTICES.md THIRD-PARTY-NOTICES.md",
+    "build": "npm run build:wasm && tsc -p tsconfig.build.json && node ../scripts/write-license.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

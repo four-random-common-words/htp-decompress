@@ -115,4 +115,5 @@ end.
 ## License
 
 GPL-3.0-only. The WebAssembly modules also contain third-party Rust crates under MIT, Apache-2.0 and other permissive
-licenses; their notices are in `THIRD-PARTY-NOTICES.md`.
+licenses; their notices are in `THIRD-PARTY-NOTICES.md`, and again after the GPL text in `LICENSE`, so that tools that
+collect one license file per package pick them up.
