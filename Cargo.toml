@@ -1,10 +1,12 @@
 [workspace]
 resolver = "3"
 members = ["crates/htp-decompress", "crates/htp-decompress-wasm"]
-exclude = ["vendor/ruzstd", "crates/htp-decompress/fuzz"]
+exclude = ["crates/htp-decompress/fuzz"]
 
+# ruzstd with read_decoded and no up-front window reserve, until upstream releases it
+# (branch read-decoded of the fork, offered to KillingSpark/zstd-rs).
 [patch.crates-io]
-ruzstd = { path = "vendor/ruzstd" }
+ruzstd = { git = "https://github.com/four-random-common-words/zstd-rs", rev = "4d27dee2935869ff9e93b3b5a7148dc44ec3d8d5" }
 
 [profile.release]
 lto = true

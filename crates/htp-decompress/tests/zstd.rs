@@ -191,7 +191,13 @@ fn rejects_a_block_that_decodes_to_more_than_128_kib() {
         Limits::default(),
     );
 
-    assert_eq!(decoded.result, Err(Error::Corrupt("zstd block too large")));
+    // ruzstd rejects the oversized literals itself since its fix #128; the decoder's own size check
+    // stays as a backstop, so either corrupt error is right.
+    assert!(
+        matches!(decoded.result, Err(Error::Corrupt(_))),
+        "{:?}",
+        decoded.result
+    );
     assert!(decoded.max_produced_per_call <= 131_072);
 }
 

@@ -110,7 +110,6 @@ Cargo.toml              workspace
 rust-toolchain.toml     Rust 1.100.0 + wasm32-unknown-unknown
 crates/htp-decompress/  core library: Decoder for all three formats, features gzip/xz/zstd
 crates/htp-decompress-wasm/  cdylib: raw wasm exports over the core, built once per format
-vendor/ruzstd/          patched ruzstd until the patch is upstream (see zstd below)
 npm/                    the npm package: TypeScript sources, generated wasm modules, tests
 scripts/                build script: wasm per format -> base64 modules -> tsc -> npm pack
 fixtures/               compressed test files, the generator script and a README
@@ -246,9 +245,10 @@ ruzstd needs a patch with three behaviour changes:
    so removing that reserve is enough; tested on single-frame, multi-frame (pzstd) and 37.8 MiB
    window files, all still decoding correctly.
 
-With these, zstd memory follows the decoded output (up to the window), as xz's already does. Keep the
-patched copy in `vendor/ruzstd` through `[patch.crates-io]`, and offer the changes upstream
-(KillingSpark/zstd-rs).
+With these, zstd memory follows the decoded output (up to the window), as xz's already does. The
+patch lives on branch `read-decoded` of the fork github.com/four-random-common-words/zstd-rs
+(based on upstream master, ruzstd 0.9.2), which `[patch.crates-io]` pins by commit, and is offered
+upstream (KillingSpark/zstd-rs). Once a release contains it, drop the `[patch.crates-io]` entries.
 
 ### wasm module (`htp-decompress-wasm`)
 
@@ -472,6 +472,7 @@ in Deno (V8): zstd 135 to 293 MiB/s, xz 35 to 107 MiB/s (about 1.3x the time of 
 9. Licensed GPL-3.0. Hosting is the owner's decision: a personal repository for now (see
    Distribution).
 10. ruzstd must hand out output right after each block and must not reserve the window up front;
-    both go into the vendored patch alongside the tested drain at a cut-off.
+    both go into the ruzstd patch (first vendored, now a fork branch) alongside the tested drain at
+    a cut-off.
 11. The web-ui pull request is the last phase of this plan, starting after the owner's first npm
     publish. It switches gzip to the package too, not only xz and zstd.

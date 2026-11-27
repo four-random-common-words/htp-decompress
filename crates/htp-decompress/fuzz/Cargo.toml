@@ -23,4 +23,4 @@ bench = false
 [workspace]
 
 [patch.crates-io]
-ruzstd = { path = "../../../vendor/ruzstd" }
+ruzstd = { git = "https://github.com/four-random-common-words/zstd-rs", rev = "4d27dee2935869ff9e93b3b5a7148dc44ec3d8d5" }

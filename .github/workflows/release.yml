@@ -47,13 +47,6 @@ jobs:
 
       - run: cargo test --locked
 
-      # The toolchain action denies warnings for the whole job; only the vendored manifest's upstream
-      # warning is allowed, as in ci.yml.
-      - name: Test vendored ruzstd
-        run: cargo test --manifest-path vendor/ruzstd/Cargo.toml --locked
-        env:
-          CARGO_BUILD_WARNINGS: allow
-
       - run: npm ci
         working-directory: npm
       - run: npm run build

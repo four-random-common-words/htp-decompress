@@ -23,7 +23,7 @@ The list is what this command gives for each format; update it when a dependency
 | lzma-rust2 | 0.25.0 | xz | Apache-2.0 | The lzma-rust2 authors (the crate states no copyright line) |
 | sha2 | 0.11.1 | xz | MIT OR Apache-2.0 | Copyright (c) 2016-2026 The RustCrypto Project Developers; Copyright (c) 2016 Artyom Pavlov; Copyright (c) 2009-2013 Mozilla Foundation; Copyright (c) 2006-2009 Graydon Hoare |
 | typenum | 1.20.1 | xz | MIT OR Apache-2.0 | Copyright (c) 2014 Paho Lurie-Gregg |
-| ruzstd | 0.9.1, patched (`vendor/ruzstd`) | zstd | MIT | Copyright (c) 2019 Moritz Borcherding |
+| ruzstd | 0.9.2, patched (github.com/four-random-common-words/zstd-rs, branch `read-decoded`) | zstd | MIT | Copyright (c) 2019 Moritz Borcherding |
 | twox-hash | 2.1.5 | zstd | MIT | Copyright (c) 2015 Jake Goulding |
 
 The modules also contain parts of the Rust standard library (`core`, `alloc`, `std` and the crates they build on for

@@ -181,7 +181,8 @@ checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
 name = "ruzstd"
-version = "0.9.1"
+version = "0.9.2"
+source = "git+https://github.com/four-random-common-words/zstd-rs?rev=4d27dee2935869ff9e93b3b5a7148dc44ec3d8d5#4d27dee2935869ff9e93b3b5a7148dc44ec3d8d5"
 dependencies = [
  "twox-hash",
 ]

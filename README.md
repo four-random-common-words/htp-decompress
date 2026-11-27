@@ -9,7 +9,6 @@ gzip, xz and zstd decoders written in Rust, compiled to one WebAssembly module p
 | ------------------------- | -------------------------------------------------------------------------------- |
 | `crates/htp-decompress`   | The decoder core: gzip (miniz_oxide), xz (lzma-rust2) and zstd (ruzstd).         |
 | `crates/htp-decompress-wasm` | The wasm exports, one build per format feature.                               |
-| `vendor/ruzstd`           | The patched ruzstd the zstd decoder uses.                                        |
 | `npm`                     | The npm package: the stream, format detection, tests. See `npm/README.md`.       |
 | `fixtures`                | Test files for all three formats, their originals, manifest and generator.       |
 | `scripts`                 | `build-wasm.sh`, `embed-wasm.mjs` and `write-license.mjs`.                       |
