@@ -12,7 +12,8 @@ npm only lets you attach a trusted publisher to a package that already exists, s
 published from your machine:
 
     npm login
-    cd npm && npm run build && npm pack
+    mise run build
+    cd npm && npm pack
     npm publish htp-decompress-0.1.0.tgz --access public
 
 Publishing the tarball from `npm pack` matches what `release.yml` does.

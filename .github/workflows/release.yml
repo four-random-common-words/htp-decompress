@@ -21,10 +21,12 @@ jobs:
       # Reads rust-toolchain.toml (Rust 1.100.0, wasm32 target, rustfmt, clippy).
       - uses: actions-rust-lang/setup-rust-toolchain@v2
 
-      # Must match mise.toml. setup-node@v4 cannot read that file.
-      - uses: actions/setup-node@v4
+      # Installs Node from mise.toml and trusts its tasks. The version matches min_version there. No cache: a
+      # cache written by another workflow could swap the Node that packs the published tarball.
+      - uses: jdx/mise-action@v5
         with:
-          node-version: 24.18.0
+          version: 2026.8.14
+          cache: false
 
       - name: Check the tag against all three versions
         run: |
@@ -34,27 +36,20 @@ jobs:
           test "$GITHUB_REF_NAME" = "v$npm_version"
           test "$GITHUB_REF_NAME" = "v$crate_versions"
 
-      - run: cargo fmt --check
-      - run: cargo clippy --all-targets --locked -- -D warnings
+      # The same steps as in ci.yml.
+      - run: mise run lint:fmt
+      - run: mise run lint:clippy
+      - run: mise run lint:wasm
+      - run: mise run test:rust
 
-      # One module per format, as in ci.yml.
-      - name: Clippy wasm crate (gzip)
-        run: cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features gzip --locked -- -D warnings
-      - name: Clippy wasm crate (xz)
-        run: cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features xz --locked -- -D warnings
-      - name: Clippy wasm crate (zstd)
-        run: cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features zstd --locked -- -D warnings
+      - run: mise run deps
 
-      - run: cargo test --locked
+      # Also appends the wasm size table to $GITHUB_STEP_SUMMARY.
+      - run: mise run build
 
-      - run: npm ci
-        working-directory: npm
-      - run: npm run build
-        working-directory: npm
-      - run: npm test
-        working-directory: npm
-      - run: npm run typecheck
-        working-directory: npm
+      # Both reuse the build above, since nothing it reads changed.
+      - run: mise run test:npm
+      - run: mise run typecheck
 
       # The tarball is built once; the published file and the release asset are the same artifact.
       - id: pack
@@ -77,7 +72,8 @@ jobs:
       id-token: write
       contents: write
     steps:
-      # Node 24.18.0 ships npm 11.16.0; trusted publishing needs 11.5.1 or newer.
+      # No checkout here, so mise.toml is not available: the version must match it by hand. Node 24.18.0 ships
+      # npm 11.16.0; trusted publishing needs 11.5.1 or newer.
       - uses: actions/setup-node@v4
         with:
           node-version: 24.18.0

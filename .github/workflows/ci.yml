@@ -24,31 +24,22 @@ jobs:
       # Reads rust-toolchain.toml (Rust 1.100.0, wasm32 target, rustfmt, clippy).
       - uses: actions-rust-lang/setup-rust-toolchain@v2
 
-      # Must match mise.toml. setup-node@v4 cannot read that file.
-      - uses: actions/setup-node@v4
+      # Installs Node from mise.toml and trusts its tasks. The version matches min_version there.
+      - uses: jdx/mise-action@v5
         with:
-          node-version: 24.18.0
+          version: 2026.8.14
 
-      - run: cargo fmt --check
-      - run: cargo clippy --all-targets --locked -- -D warnings
+      # The same tasks as `mise run check`, one step each so a failure shows where it happened.
+      - run: mise run lint:fmt
+      - run: mise run lint:clippy
+      - run: mise run lint:wasm
+      - run: mise run test:rust
 
-      # One module per format; the default feature only serves the native checks above.
-      - name: Clippy wasm crate (gzip)
-        run: cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features gzip --locked -- -D warnings
-      - name: Clippy wasm crate (xz)
-        run: cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features xz --locked -- -D warnings
-      - name: Clippy wasm crate (zstd)
-        run: cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features zstd --locked -- -D warnings
-
-      - run: cargo test --locked
-
-      - run: npm ci
-        working-directory: npm
+      - run: mise run deps
 
       # Also appends the wasm size table to $GITHUB_STEP_SUMMARY.
-      - run: npm run build
-        working-directory: npm
-      - run: npm test
-        working-directory: npm
-      - run: npm run typecheck
-        working-directory: npm
+      - run: mise run build
+
+      # Both reuse the build above, since nothing it reads changed.
+      - run: mise run test:npm
+      - run: mise run typecheck
