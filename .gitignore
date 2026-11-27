@@ -5,3 +5,4 @@ npm/build/
 npm/src/wasm/
 npm/LICENSE
 npm/THIRD-PARTY-NOTICES.md
+mise.local.toml

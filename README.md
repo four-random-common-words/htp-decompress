@@ -16,30 +16,35 @@ gzip, xz and zstd decoders written in Rust, compiled to one WebAssembly module p
 
 ## Build and test
 
-Node and Rust are pinned by `mise.toml` and `rust-toolchain.toml`. The build needs no C compiler.
+Node and Rust are pinned by `mise.toml` and `rust-toolchain.toml`. The build needs no C compiler. Every command is a
+[mise](https://mise.jdx.dev) task, and CI runs the same tasks; `mise tasks` lists them all.
 
-    # Rust
-    cargo fmt --check
-    cargo clippy --all-targets -- -D warnings
-    cargo test --locked
+    mise run check       # everything CI runs
+    mise run lint        # cargo fmt --check, clippy natively and on the wasm crate once per format
+    mise run test        # Rust and npm tests
+    mise run build       # npm ci, the three wasm modules (prints their sizes) and the npm package
+    mise run typecheck
+    mise run fmt         # formats the Rust code
+    mise run cargo:clean # deletes the cargo build output, also the fuzz crate's (not its corpus)
 
-    # npm package (builds the three wasm modules first and prints their sizes)
-    cd npm
-    npm ci
-    npm run build
-    npm test
-    npm run typecheck
-
-`npm run build` writes `npm/src/wasm/<format>.ts` (git-ignored), compiles to `npm/dist` and writes `LICENSE` and
+`mise run build` writes `npm/src/wasm/<format>.ts` (git-ignored), compiles to `npm/dist` and writes `LICENSE` and
 `THIRD-PARTY-NOTICES.md` into `npm/` (also git-ignored). The package's `LICENSE` is the GPL text followed by the
-third-party notices, because license extractors such as Angular's read only that file. `npm pack` then produces the
-package.
+third-party notices, because license extractors such as Angular's read only that file. `npm pack` in `npm/` then
+produces the package. The npm tests and the typecheck build first, and mise skips the build when none of its inputs
+changed; `mise run --force build` reinstalls the npm dependencies and rebuilds anyway.
+
+## Fuzzing
+
+With `cargo-fuzz` and a nightly toolchain installed, this seeds the corpus from the fixtures and fuzzes all three
+decoders; arguments after the task name go to libFuzzer:
+
+    mise run fuzz -max_total_time=300
 
 ## Regenerating the fixtures
 
-With `gzip`, `xz`, `zstd` and `pzstd` on `PATH`, from the repository root:
+With `gzip`, `xz`, `zstd` and `pzstd` on `PATH`:
 
-    python3 -I fixtures/generate.py
+    mise run fixtures
 
 The tool versions used are listed in `fixtures/README.md`.
 

@@ -1,2 +1,128 @@
+min_version = "2026.8.14"
+
 [tools]
 node = "24.18.0"
+
+# Rust comes from rust-toolchain.toml through rustup. CI runs the same tasks, step by step.
+
+[tasks.check]
+description = "Run everything CI runs: lint, Rust tests, npm build, npm tests and typecheck"
+run = [
+  { task = "lint" },
+  { task = "test:rust" },
+  { task = "test:npm" },
+  { task = "typecheck" },
+]
+
+[tasks.fmt]
+description = "Format the Rust code"
+run = "cargo fmt"
+
+# The fuzz crate is its own workspace with its own target directory. Its corpus stays.
+[tasks."cargo:clean"]
+description = "Delete the cargo build output of the workspace and the fuzz crate"
+run = [
+  "cargo clean",
+  "cargo clean --manifest-path crates/htp-decompress/fuzz/Cargo.toml",
+]
+
+[tasks.lint]
+description = "Check formatting and run clippy natively and on the wasm crate"
+run = [
+  { task = "lint:fmt" },
+  { task = "lint:clippy" },
+  { task = "lint:wasm" },
+]
+
+[tasks."lint:fmt"]
+description = "Check the Rust formatting"
+run = "cargo fmt --check"
+
+[tasks."lint:clippy"]
+description = "Run clippy on all native targets"
+run = "cargo clippy --all-targets --locked -- -D warnings"
+
+# One module per format; the default feature only serves the native checks.
+[tasks."lint:wasm"]
+description = "Run clippy on the wasm crate once per format"
+run = [
+  "cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features gzip --locked -- -D warnings",
+  "cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features xz --locked -- -D warnings",
+  "cargo clippy -p htp-decompress-wasm --target wasm32-unknown-unknown --no-default-features --features zstd --locked -- -D warnings",
+]
+
+[tasks.test]
+description = "Run the Rust and npm tests"
+run = [
+  { task = "test:rust" },
+  { task = "test:npm" },
+]
+
+[tasks."test:rust"]
+description = "Run the Rust tests"
+run = "cargo test --locked"
+
+[tasks."test:npm"]
+description = "Run the npm package tests against a fresh build"
+depends = ["build"]
+dir = "npm"
+run = "npm test"
+
+[tasks.typecheck]
+description = "Typecheck the npm package and its tests"
+depends = ["build"]
+dir = "npm"
+run = "npm run typecheck"
+
+[tasks.deps]
+description = "Install the npm dependencies from the lock file"
+dir = "npm"
+run = "npm ci"
+sources = ["package.json", "package-lock.json"]
+outputs = ["node_modules/.package-lock.json"]
+
+# Skipped when nothing it reads changed since the last build, so test:npm and typecheck reuse it.
+[tasks.build]
+description = "Build the three wasm modules and the npm package, and print the module sizes"
+depends = ["deps"]
+dir = "npm"
+run = "npm run build"
+sources = [
+  "../Cargo.toml",
+  "../Cargo.lock",
+  "../rust-toolchain.toml",
+  "../crates/htp-decompress/Cargo.toml",
+  "../crates/htp-decompress/src/**/*.rs",
+  "../crates/htp-decompress-wasm/Cargo.toml",
+  "../crates/htp-decompress-wasm/src/**/*.rs",
+  "../scripts/*",
+  "../LICENSE",
+  "../THIRD-PARTY-NOTICES.md",
+  "package.json",
+  "package-lock.json",
+  "tsconfig.json",
+  "tsconfig.build.json",
+  "src/*.ts",
+]
+outputs = [
+  "src/wasm/gzip.ts",
+  "src/wasm/xz.ts",
+  "src/wasm/zstd.ts",
+  "dist/index.js",
+  "LICENSE",
+  "THIRD-PARTY-NOTICES.md",
+]
+
+[tasks.fuzz]
+description = "Fuzz the decoders with cargo-fuzz on nightly; extra arguments go to libFuzzer"
+depends = ["fuzz:seed"]
+dir = "crates/htp-decompress/fuzz"
+run = "cargo +nightly fuzz run process --"
+
+[tasks."fuzz:seed"]
+description = "Write the fixtures into the fuzz corpus"
+run = "crates/htp-decompress/fuzz/seed-corpus.sh"
+
+[tasks.fixtures]
+description = "Regenerate the test fixtures (needs gzip, xz, zstd and pzstd on PATH)"
+run = "python3 -I fixtures/generate.py"

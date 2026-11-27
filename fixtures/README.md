@@ -10,9 +10,9 @@ Tools used:
 - xz: xz (XZ Utils) 5.8.3
 - zstd: zstd v1.5.7 (pzstd from the same install)
 
-Regenerate from the repository root, with `gzip`, `xz`, `zstd` and `pzstd` on `PATH`:
+Regenerate with `gzip`, `xz`, `zstd` and `pzstd` on `PATH`:
 
-    python3 -I fixtures/generate.py
+    mise run fixtures
 
 Notes:
 
